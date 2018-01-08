@@ -25,7 +25,7 @@ if (!Array.prototype.includes) {
         while (k < len) {
             currentElement = O[k];
             if (searchElement === currentElement ||
-                (searchElement !== searchElement 
+                (searchElement !== searchElement
                 	&& currentElement !== currentElement)) { // NaN !== NaN
                 return true;
             }
@@ -246,7 +246,3 @@ document.addEventListener('DOMContentLoaded', function () {
 	const domContainer = new DomContainer();
 	const searchWindow = new SearchWindow(baseApiUrl, domContainer);
 });
-
-function add(a, b) {
-	return a + b;
-}
