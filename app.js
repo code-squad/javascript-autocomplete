@@ -50,7 +50,6 @@ var Util = {
 	}
 }
 
-
 function DomContainer() {
 	this.appBar = Util.$('.app-bar');
 	this.searchButton = Util.$('.search-button');
@@ -74,12 +73,14 @@ function SearchWindow(apiUrl, domContainer) {
 	this.memoLog = [];
 	this.memoSize = 100;
 
-	this.setFocusOutListener();
-	this.setKeyboardListener();
-	this.setSearchButtonListener();
-	this.setSearchTextChangeListener();
-	this.setAutoCompleteClickListener();
-	this.setAutoCompleteHoverListener();
+	// this.domContainer.searchField.addEventListener('focusout', this.focusOut.bind(this));
+	this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
+	this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
+
+	this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
+	this.domContainer.autoCompleteList.addEventListener('click', this.clickedItem.bind(this));
+
+	this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
 }
 
 var searchWindowObj = {
@@ -115,109 +116,87 @@ var searchWindowObj = {
 	launchSearchEvent: function(keyword) {
 		window.location.reload();
 	},
-	setFocusOutListener: function() {
-		const searchField = this.domContainer.searchField;
+	focusOut: function(e) {
+		this.domContainer.autoCompleteList.innerHTML = '';
+	},
+	checkKeyCode: function(e) {
+		let currHoveredItem = this.domContainer.getHoveredItem();
 
-		searchField.addEventListener('focusout', function(e) {
-			this.domContainer.autoCompleteList.innerHTML = '';
+		switch(e.keyCode){
+			case 38: //ArrowUp
+				if(!currHoveredItem) {
+					return;
+				}
+
+				if(currHoveredItem.previousElementSibling) {
+					currHoveredItem.previousElementSibling.classList.add('hover');
+					currHoveredItem.classList.remove('hover');
+				}
+				break;
+
+			case 40: //ArrowDown
+				if(!currHoveredItem) {
+					const autoCompleteList = this.domContainer.autoCompleteList;
+					if(autoCompleteList.childNodes) {
+						autoCompleteList.childNodes[0].classList.add('hover')
+					}
+					return;
+				}
+
+				if(currHoveredItem.nextElementSibling) {
+					currHoveredItem.nextElementSibling.classList.add('hover');
+					currHoveredItem.classList.remove('hover');
+				}
+				break;
+
+			case 13: //Enter
+				if(!currHoveredItem) {
+					this.launchSearchEvent();
+					return;
+				}
+
+				this.putSelectedItemToField(currHoveredItem.dataset.name);
+		}
+	},
+	changeSearchText: function(e) {
+		const keyword = e.target.value;
+		if (this.memo.hasOwnProperty(keyword)) {
+			this.updateRendering(keyword, this.memo[keyword]);
+			return;
+		}
+
+		const url = this.apiUrl + keyword;
+		Util.getData(url, function(returnData) {
+			this.caching(keyword, returnData[1]);
+			this.updateRendering(keyword, this.memo[keyword]);
 		}.bind(this));
 	},
-	setKeyboardListener: function() {
-		const searchField = this.domContainer.searchField;
+	mouseOver: function(e) {
+		let listItem = e.target;
 
-		searchField.addEventListener('keydown', function(e) {
-			let currHoveredItem = this.domContainer.getHoveredItem();
+		if(!listItem || listItem.nodeName !== 'LI') {
+			return;
+		}
 
-			switch(e.keyCode){
-				case 38: //ArrowUp
-					if(!currHoveredItem) {
-						return;
-					}
+		let currHoveredItem = this.domContainer.getHoveredItem();
 
-					if(currHoveredItem.previousElementSibling) {
-						currHoveredItem.previousElementSibling.classList.add('hover');
-						currHoveredItem.classList.remove('hover');
-					}
-					break;
+		if(currHoveredItem) {
+			currHoveredItem.classList.remove('hover');
+		}
 
-				case 40: //ArrowDown
-					if(!currHoveredItem) {
-						const autoCompleteList = this.domContainer.autoCompleteList;
-						if(autoCompleteList.childNodes) {
-							autoCompleteList.childNodes[0].classList.add('hover')
-						}
-						return;
-					}
-
-					if(currHoveredItem.nextElementSibling) {
-						currHoveredItem.nextElementSibling.classList.add('hover');
-						currHoveredItem.classList.remove('hover');
-					}
-					break;
-
-				case 13: //Enter
-					if(!currHoveredItem) {
-						this.launchSearchEvent();
-						return;
-					}
-
-					this.putSelectedItemToField(currHoveredItem.dataset.name);
-			}
-		}.bind(this));
+		listItem.classList.add('hover');
 	},
-	setAutoCompleteHoverListener: function() {
-		const autoCompleteList = this.domContainer.autoCompleteList;
+	clickedItem: function(e) {
+		let listItem = e.target;
 
-		autoCompleteList.addEventListener('mouseover', function(e) {
-			let listItem = e.target;
+		if(!listItem || listItem.nodeName !== 'LI') {
+			return;
+		}
 
-			if(!listItem || listItem.nodeName !== 'LI') {
-				return;
-			}
-
-			let currHoveredItem = this.domContainer.getHoveredItem();
-
-			if(currHoveredItem) {
-				currHoveredItem.classList.remove('hover');
-			}
-
-			listItem.classList.add('hover');
-		}.bind(this));
+		this.putSelectedItemToField(listItem.dataset.name);
 	},
-	setAutoCompleteClickListener: function() {
-		const autoCompleteList = this.domContainer.autoCompleteList;
-
-		autoCompleteList.addEventListener('click', function(e) {
-			let listItem = e.target;
-
-			if(!listItem || listItem.nodeName !== 'LI') {
-				return;
-			}
-
-			this.putSelectedItemToField(listItem.dataset.name);
-		}.bind(this));
-	},
-	setSearchButtonListener: function() {
-		const searchButton = this.domContainer.searchButton;
-
-		searchButton.addEventListener('click', function(e) {
-			this.launchSearchEvent();
-		}.bind(this));
-	},
-	setSearchTextChangeListener: function() {
-		this.domContainer.searchField.addEventListener('input', function(e) {
-			const keyword = e.target.value;
-			if (this.memo.hasOwnProperty(keyword)) {
-				this.updateRendering(keyword, this.memo[keyword]);
-				return;
-			}
-
-			const url = this.apiUrl + keyword;
-			Util.getData(url, function(returnData) {
-				this.caching(keyword, returnData[1]);
-				this.updateRendering(keyword, this.memo[keyword]);
-			}.bind(this));
-		}.bind(this));
+	clickedSearchButton: function(e) {
+		this.launchSearchEvent();
 	},
 	putSelectedItemToField: function(word) {
 		const searchField = this.domContainer.searchField;
