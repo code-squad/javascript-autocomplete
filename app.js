@@ -35,9 +35,6 @@ if (!Array.prototype.includes) {
     };
 }
 
-function Util() {
-}
-
 var Util = {
 	$: function(ele) {
 		return document.querySelector(ele);
@@ -86,19 +83,14 @@ function SearchWindow(apiUrl, domContainer) {
 }
 
 var searchWindowObj = {
-	requestApi: function(word, callback) {
-		const url = this.apiUrl + word;
-		Util.getData(url, function (returnData) {
-			const key = word;
-			const value = returnData[1];
+	caching: function(word, returnData) {
+		const key = word;
+		const value = returnData[1];
 
-			this.memo[key] = value;
-			if (!this.memoLog.includes(key)) {
-				this.memoLog.push(key);
-			}
-
-			callback();
-		}.bind(this));
+		this.memo[key] = value;
+		if (!this.memoLog.includes(key)) {
+			this.memoLog.push(key);
+		}
 	},
 	updateRendering: function(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
@@ -123,7 +115,9 @@ var searchWindowObj = {
 				delete this.memo[key];
 			}
 
-			this.requestApi(word, function() {
+			const url = this.apiUrl + word;
+			Util.getData(url, function(returnData) {
+				this.caching(word, returnData);
 				callback(this.memo[word]);
 			}.bind(this));
 		} else {
