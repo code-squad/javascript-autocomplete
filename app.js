@@ -84,6 +84,10 @@ function SearchWindow(apiUrl, domContainer) {
 
 var searchWindowObj = {
 	caching: function(key, value) {
+		if (this.memo.hasOwnProperty(key)) {
+			return;
+		}
+
 		if (this.memoLog.length > this.memoSize) {
 			let key = this.memoLog.shift();
 			delete this.memo[key];
