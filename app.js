@@ -235,8 +235,8 @@ var searchWindowObj = {
 
 SearchWindow.prototype = searchWindowObj;
 
-document.addEventListener('DOMContentLoaded', function () {
+// document.addEventListener('DOMContentLoaded', function () {
 	const baseApiUrl = "http://crong.codesquad.kr:8080/ac/";
 	const domContainer = new DomContainer();
 	const searchWindow = new SearchWindow(baseApiUrl, domContainer);
-});
+// });

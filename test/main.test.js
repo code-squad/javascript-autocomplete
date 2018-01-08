@@ -26,16 +26,18 @@ describe('Util', function(){
 })
 
 describe('SearchWindow', function(){
-	it('SearchWindow.requestApi', function(done) {
-		var url = "http://crong.codesquad.kr:8080/ac/";
-		var word = "오징";
+	it('SearchWindow.caching', function() {
+		let word = '오징'
+		let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
+		searchWindow.caching(word, testResult)
+		assert.deepEqual(searchWindow.memo, {[word]: testResult[1]})
+	})
+	it('SearchWindow.caching2', function() {
+		let word = '된장'
+		let word2 = '된장'
+		searchWindow.caching(word, [0, 0])
+		searchWindow.caching(word2, [0, 0])
 
-		var fn = function(result) {
-			let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
-			assert.deepEqual(result, testResult);
-			done();
-		};
-
-		SearchWindow.requestApi(word, fn)
+		assert.deepEqual(searchWindow.memoLog, ['오징', '된장'])
 	})
 })
