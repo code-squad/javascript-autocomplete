@@ -83,14 +83,14 @@ function SearchWindow(apiUrl, domContainer) {
 }
 
 var searchWindowObj = {
-	caching: function(word, returnData) {
-		const key = word;
-		const value = returnData[1];
+	caching: function(key, value) {
+		if (this.memoLog.length > this.memoSize) {
+			let key = this.memoLog.shift();
+			delete this.memo[key];
+		}
 
 		this.memo[key] = value;
-		if (!this.memoLog.includes(key)) {
-			this.memoLog.push(key);
-		}
+		this.memoLog.push(key);
 	},
 	updateRendering: function(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
@@ -107,22 +107,6 @@ var searchWindowObj = {
 		});
 
 		listDom.innerHTML = listDomHTML;
-	},
-	getAutoCompleteList: function(word, callback) {
-		if (!this.memo.hasOwnProperty(word)) {
-			if (this.memoLog.length > this.memoSize) {
-				let key = this.memoLog.shift();
-				delete this.memo[key];
-			}
-
-			const url = this.apiUrl + word;
-			Util.getData(url, function(returnData) {
-				this.caching(word, returnData);
-				callback(this.memo[word]);
-			}.bind(this));
-		} else {
-			callback(this.memo[word]);
-		}
 	},
 	launchSearchEvent: function(keyword) {
 		window.location.reload();
@@ -213,15 +197,21 @@ var searchWindowObj = {
 		const searchButton = this.domContainer.searchButton;
 
 		searchButton.addEventListener('click', function(e) {
-
 			this.launchSearchEvent();
 		}.bind(this));
 	},
 	setSearchTextChangeListener: function() {
 		this.domContainer.searchField.addEventListener('input', function(e) {
 			const keyword = e.target.value;
-			this.getAutoCompleteList(keyword, function(autoComplete) {
-				this.updateRendering(keyword, autoComplete);
+			if (this.memo.hasOwnProperty(keyword)) {
+				this.updateRendering(keyword, this.memo[keyword]);
+				return;
+			}
+
+			const url = this.apiUrl + keyword;
+			Util.getData(url, function(returnData) {
+				this.caching(keyword, returnData[1]);
+				this.updateRendering(keyword, this.memo[keyword]);
 			}.bind(this));
 		}.bind(this));
 	},
