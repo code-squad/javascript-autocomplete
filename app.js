@@ -58,13 +58,11 @@ function DomContainer() {
 	this.autoCompleteList = Util.$('.auto-complete-list');
 }
 
-var domContainerObj = {
+DomContainer.prototype = {
 	getHoveredItem: function() {
 		return Util.$('.hover');
 	}
 }
-
-DomContainer.prototype = domContainerObj;
 
 function SearchWindow(apiUrl, domContainer) {
 	this.apiUrl = apiUrl;
@@ -73,7 +71,6 @@ function SearchWindow(apiUrl, domContainer) {
 	this.memoLog = [];
 	this.memoSize = 100;
 
-	// this.domContainer.searchField.addEventListener('focusout', this.focusOut.bind(this));
 	this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
 	this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
 
@@ -83,7 +80,7 @@ function SearchWindow(apiUrl, domContainer) {
 	this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
 }
 
-var searchWindowObj = {
+SearchWindow.prototype = {
 	caching: function(key, value) {
 		if (this.memo.hasOwnProperty(key)) {
 			return;
@@ -115,9 +112,6 @@ var searchWindowObj = {
 	},
 	launchSearchEvent: function(keyword) {
 		window.location.reload();
-	},
-	focusOut: function(e) {
-		this.domContainer.autoCompleteList.innerHTML = '';
 	},
 	checkKeyCode: function(e) {
 		let currHoveredItem = this.domContainer.getHoveredItem();
@@ -205,8 +199,6 @@ var searchWindowObj = {
 		this.domContainer.autoCompleteList.innerHTML = '';
 	}
 }
-
-SearchWindow.prototype = searchWindowObj;
 
 // document.addEventListener('DOMContentLoaded', function () {
 	const baseApiUrl = "http://crong.codesquad.kr:8080/ac/";
