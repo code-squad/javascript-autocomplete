@@ -69,7 +69,7 @@ class ACResource {
         }
 
         if (this.memoLog.length > this.memoSize) {
-            let key = this.memoLog.shift();
+            const key = this.memoLog.shift();
             delete this.memo[key];
         }
 
@@ -118,14 +118,14 @@ class ACResponder {
 		}.bind(this));
 	}
     mouseOver(e) {
-		let item = e.target;
+		const item = e.target;
 		if(!item || item.nodeName !== 'LI') {
 			return;
 		}
         this.acRenderer.changeHoveredItem(item)
 	}
 	clickedItem(e) {
-		let item = e.target;
+		const item = e.target;
 		if(!item || item.nodeName !== 'LI') {
 			return;
 		}
@@ -150,7 +150,7 @@ class ACRenderer {
 		let listDomHTML = "";
 		autoComplete.forEach((item) => {
 			const itemHTML = item[0].replace(keyword, "<span>" + keyword + "</span>");
-			let itemDom = "<li data-name='" +item[0] + "'>" + itemHTML + "</li>";
+			const itemDom = "<li data-name='" +item[0] + "'>" + itemHTML + "</li>";
 			listDomHTML += itemDom;
 		});
 
@@ -161,7 +161,7 @@ class ACRenderer {
 		this.domContainer.searchField.value = "";
 	}
     pressedUpKey() {
-        let currHoveredItem = this.domContainer.getHoveredItem();
+        const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             return;
         }
@@ -171,7 +171,7 @@ class ACRenderer {
         }
     }
     pressedDownKey() {
-        let currHoveredItem = this.domContainer.getHoveredItem();
+        const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             const autoCompleteList = this.domContainer.autoCompleteList;
             if(autoCompleteList.childNodes) {
@@ -185,7 +185,7 @@ class ACRenderer {
         }
     }
     pressedEnterKey() {
-        let currHoveredItem = this.domContainer.getHoveredItem();
+        const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             this.launchSearchEvent();
             return;
@@ -193,7 +193,7 @@ class ACRenderer {
         this.putSelectedItemToField(currHoveredItem.dataset.name);
     }
     changeHoveredItem(item) {
-        let currHoveredItem = this.domContainer.getHoveredItem();
+        const currHoveredItem = this.domContainer.getHoveredItem();
 		if(currHoveredItem) {
 			currHoveredItem.classList.remove('hover');
 		}
