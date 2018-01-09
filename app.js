@@ -163,7 +163,10 @@ ACRenderer.prototype = {
 		listDom.innerHTML = listDomHTML;
 	},
     launchSearchEvent: function(keyword) {
-		window.location.reload();
+		// window.location.reload();
+
+		domContainer.autoCompleteList.innerHTML = "";
+		domContainer.searchField.value = "";
 	},
     pressedUpKey() {
         let currHoveredItem = this.domContainer.getHoveredItem();
@@ -212,10 +215,10 @@ ACRenderer.prototype = {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+// document.addEventListener('DOMContentLoaded', function () {
 	const baseURL = "http://crong.codesquad.kr:8080/ac/";
     const domContainer = new DomContainer();
     const acResource = new ACResource();
     const acRenderer = new ACRenderer(domContainer);
     const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
-});
+// });
