@@ -1,0 +1,23 @@
+{
+  "name": "javascript-autocomplete",
+  "version": "1.0.0",
+  "description": "## 클래스 종류 - SearchBar - AutoComplete",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skim451/javascript-autocomplete.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/skim451/javascript-autocomplete/issues"
+  },
+  "homepage": "https://github.com/skim451/javascript-autocomplete#readme",
+  "dependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^4.1.0"
+  }
+}
