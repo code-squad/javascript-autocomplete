@@ -54,14 +54,14 @@ class ACResource {
         this.memoLog = [];
         this.memoSize = 100;
     }
-    getData(url, callback) {
-        var openRequest = new XMLHttpRequest();
-        openRequest.addEventListener("load", function (e) {
-            var data = JSON.parse(openRequest.responseText);
-            callback(data);
-        }.bind(this));
-        openRequest.open("GET", url);
-        openRequest.send();
+    getData(url) {
+        return fetch(url)
+        .then(response => response.json()
+            .then(data => data)
+        )
+        .catch((err) => {
+            console.log("error: ", err);
+        })
     }
     caching(key, value) {
         if (this.memo.hasOwnProperty(key)) {
@@ -112,10 +112,10 @@ class ACResponder {
 		}
 
 		const url = this.apiURL + keyword;
-		this.acResource.getData(url, function(returnData) {
-			this.acResource.caching(keyword, returnData[1]);
-			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
-		}.bind(this));
+		this.acResource.getData(url).then((data) => {
+            this.acResource.caching(keyword, data[1]);
+    		this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+        })
 	}
     mouseOver(e) {
 		const item = e.target;
