@@ -35,11 +35,28 @@ if (!Array.prototype.includes) {
     };
 }
 
-var Util = {
-	$: function(ele) {
-		return document.querySelector(ele);
-	},
-	getData: function(url, callback) {
+function DomContainer() {
+	this.appBar = document.querySelector('.app-bar');
+	this.searchButton = document.querySelector('.search-button');
+	this.searchBar = document.querySelector('.search-bar');
+	this.searchField = document.querySelector('#search-field');
+	this.autoCompleteList = document.querySelector('.auto-complete-list');
+}
+
+DomContainer.prototype = {
+	getHoveredItem: function() {
+		return document.querySelector('.hover');
+	}
+}
+
+function ACResource() {
+    this.memo = {};
+	this.memoLog = [];
+	this.memoSize = 100;
+}
+
+ACResource.prototype = {
+    getData: function(url, callback) {
 		var openRequest = new XMLHttpRequest();
 		openRequest.addEventListener("load", function (e) {
 			var data = JSON.parse(openRequest.responseText);
@@ -47,41 +64,8 @@ var Util = {
 		}.bind(this));
 		openRequest.open("GET", url);
 		openRequest.send();
-	}
-}
-
-function DomContainer() {
-	this.appBar = Util.$('.app-bar');
-	this.searchButton = Util.$('.search-button');
-	this.searchBar = Util.$('.search-bar');
-	this.searchField = Util.$('#search-field');
-	this.autoCompleteList = Util.$('.auto-complete-list');
-}
-
-DomContainer.prototype = {
-	getHoveredItem: function() {
-		return Util.$('.hover');
-	}
-}
-
-function SearchWindow(apiUrl, domContainer) {
-	this.apiUrl = apiUrl;
-	this.domContainer = domContainer;
-	this.memo = {};
-	this.memoLog = [];
-	this.memoSize = 100;
-
-	this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
-	this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
-
-	this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
-	this.domContainer.autoCompleteList.addEventListener('click', this.clickedItem.bind(this));
-
-	this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
-}
-
-SearchWindow.prototype = {
-	caching: function(key, value) {
+	},
+    caching: function(key, value) {
 		if (this.memo.hasOwnProperty(key)) {
 			return;
 		}
@@ -93,8 +77,76 @@ SearchWindow.prototype = {
 
 		this.memo[key] = value;
 		this.memoLog.push(key);
+	}
+}
+
+function ACResponder(domContainer, acResource, acRenderer, apiURL) {
+    this.domContainer = domContainer
+    this.acResource = acResource
+    this.acRenderer = acRenderer
+    this.apiURL = apiURL
+
+    this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
+	this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
+
+	this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
+	this.domContainer.autoCompleteList.addEventListener('click', this.clickedItem.bind(this));
+
+	this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
+}
+
+ACResponder.prototype = {
+    checkKeyCode: function(e) {
+		switch(e.keyCode){
+			case 38: //ArrowUp
+				this.acRenderer.pressedUpKey()
+				break;
+			case 40: //ArrowDown
+				this.acRenderer.pressedDownKey()
+				break;
+			case 13: //Enter
+				this.acRenderer.pressedEnterKey()
+                break;
+		}
 	},
-	updateRendering: function(keyword, autoComplete) {
+    changeSearchText: function(e) {
+		const keyword = e.target.value;
+		if (this.acResource.memo.hasOwnProperty(keyword)) {
+			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+			return;
+		}
+
+		const url = this.apiURL + keyword;
+		this.acResource.getData(url, function(returnData) {
+			this.acResource.caching(keyword, returnData[1]);
+			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+		}.bind(this));
+	},
+    mouseOver: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
+			return;
+		}
+        this.acRenderer.changeHoveredItem(item)
+	},
+	clickedItem: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
+			return;
+		}
+		this.acRenderer.putSelectedItemToField(item.dataset.name);
+	},
+	clickedSearchButton: function(e) {
+		this.acRenderer.launchSearchEvent();
+	}
+}
+
+function ACRenderer(domContainer) {
+    this.domContainer = domContainer
+}
+
+ACRenderer.prototype = {
+    updateRendering: function(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
 		if(!autoComplete){
 			listDom.innerHTML = ""
@@ -110,7 +162,7 @@ SearchWindow.prototype = {
 
 		listDom.innerHTML = listDomHTML;
 	},
-	launchSearchEvent: function(keyword) {
+    launchSearchEvent: function(keyword) {
 		window.location.reload();
 	},
     pressedUpKey() {
@@ -145,32 +197,6 @@ SearchWindow.prototype = {
         }
         this.putSelectedItemToField(currHoveredItem.dataset.name);
     },
-	checkKeyCode: function(e) {
-		switch(e.keyCode){
-			case 38: //ArrowUp
-				this.pressedUpKey()
-				break;
-			case 40: //ArrowDown
-				this.pressedDownKey()
-				break;
-			case 13: //Enter
-				this.pressedEnterKey()
-                break;
-		}
-	},
-	changeSearchText: function(e) {
-		const keyword = e.target.value;
-		if (this.memo.hasOwnProperty(keyword)) {
-			this.updateRendering(keyword, this.memo[keyword]);
-			return;
-		}
-
-		const url = this.apiUrl + keyword;
-		Util.getData(url, function(returnData) {
-			this.caching(keyword, returnData[1]);
-			this.updateRendering(keyword, this.memo[keyword]);
-		}.bind(this));
-	},
     changeHoveredItem(item) {
         let currHoveredItem = this.domContainer.getHoveredItem();
 		if(currHoveredItem) {
@@ -178,33 +204,18 @@ SearchWindow.prototype = {
 		}
 		item.classList.add('hover');
     },
-	mouseOver: function(e) {
-		let item = e.target;
-		if(!item || item.nodeName !== 'LI') {
-			return;
-		}
-        this.changeHoveredItem(item)
-	},
-	clickedItem: function(e) {
-		let item = e.target;
-		if(!item || item.nodeName !== 'LI') {
-			return;
-		}
-		this.putSelectedItemToField(item.dataset.name);
-	},
-	clickedSearchButton: function(e) {
-		this.launchSearchEvent();
-	},
-	putSelectedItemToField: function(word) {
-		const searchField = this.domContainer.searchField;
-		searchField.value = word;
+    putSelectedItemToField: function(word) {
+        const searchField = this.domContainer.searchField;
+        searchField.value = word;
 
-		this.domContainer.autoCompleteList.innerHTML = '';
-	}
+        this.domContainer.autoCompleteList.innerHTML = '';
+    }
 }
 
-// document.addEventListener('DOMContentLoaded', function () {
-	const baseApiUrl = "http://crong.codesquad.kr:8080/ac/";
-	const domContainer = new DomContainer();
-	const searchWindow = new SearchWindow(baseApiUrl, domContainer);
-// });
+document.addEventListener('DOMContentLoaded', function () {
+	const baseURL = "http://crong.codesquad.kr:8080/ac/";
+    const domContainer = new DomContainer();
+    const acResource = new ACResource();
+    const acRenderer = new ACRenderer(domContainer);
+    const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
+});
