@@ -113,43 +113,49 @@ SearchWindow.prototype = {
 	launchSearchEvent: function(keyword) {
 		window.location.reload();
 	},
+    pressedUpKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            return;
+        }
+        if(currHoveredItem.previousElementSibling) {
+            currHoveredItem.previousElementSibling.classList.add('hover');
+            currHoveredItem.classList.remove('hover');
+        }
+    },
+    pressedDownKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            const autoCompleteList = this.domContainer.autoCompleteList;
+            if(autoCompleteList.childNodes) {
+                autoCompleteList.childNodes[0].classList.add('hover')
+            }
+            return;
+        }
+        if(currHoveredItem.nextElementSibling) {
+            currHoveredItem.nextElementSibling.classList.add('hover');
+            currHoveredItem.classList.remove('hover');
+        }
+    },
+    pressedEnterKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            this.launchSearchEvent();
+            return;
+        }
+        this.putSelectedItemToField(currHoveredItem.dataset.name);
+    },
 	checkKeyCode: function(e) {
-		let currHoveredItem = this.domContainer.getHoveredItem();
-
 		switch(e.keyCode){
 			case 38: //ArrowUp
-				if(!currHoveredItem) {
-					return;
-				}
-
-				if(currHoveredItem.previousElementSibling) {
-					currHoveredItem.previousElementSibling.classList.add('hover');
-					currHoveredItem.classList.remove('hover');
-				}
+				this.pressedUpKey()
 				break;
-
 			case 40: //ArrowDown
-				if(!currHoveredItem) {
-					const autoCompleteList = this.domContainer.autoCompleteList;
-					if(autoCompleteList.childNodes) {
-						autoCompleteList.childNodes[0].classList.add('hover')
-					}
-					return;
-				}
-
-				if(currHoveredItem.nextElementSibling) {
-					currHoveredItem.nextElementSibling.classList.add('hover');
-					currHoveredItem.classList.remove('hover');
-				}
+				this.pressedDownKey()
 				break;
-
 			case 13: //Enter
-				if(!currHoveredItem) {
-					this.launchSearchEvent();
-					return;
-				}
-
-				this.putSelectedItemToField(currHoveredItem.dataset.name);
+				this.pressedEnterKey()
+                break;
 		}
 	},
 	changeSearchText: function(e) {
@@ -165,29 +171,26 @@ SearchWindow.prototype = {
 			this.updateRendering(keyword, this.memo[keyword]);
 		}.bind(this));
 	},
-	mouseOver: function(e) {
-		let listItem = e.target;
-
-		if(!listItem || listItem.nodeName !== 'LI') {
-			return;
-		}
-
-		let currHoveredItem = this.domContainer.getHoveredItem();
-
+    changeHoveredItem(item) {
+        let currHoveredItem = this.domContainer.getHoveredItem();
 		if(currHoveredItem) {
 			currHoveredItem.classList.remove('hover');
 		}
-
-		listItem.classList.add('hover');
-	},
-	clickedItem: function(e) {
-		let listItem = e.target;
-
-		if(!listItem || listItem.nodeName !== 'LI') {
+		item.classList.add('hover');
+    },
+	mouseOver: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
 			return;
 		}
-
-		this.putSelectedItemToField(listItem.dataset.name);
+        this.changeHoveredItem(item)
+	},
+	clickedItem: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
+			return;
+		}
+		this.putSelectedItemToField(item.dataset.name);
 	},
 	clickedSearchButton: function(e) {
 		this.launchSearchEvent();
