@@ -149,8 +149,9 @@ class ACRenderer {
 
 		let listDomHTML = "";
 		autoComplete.forEach((item) => {
-			const itemHTML = item[0].replace(keyword, "<span>" + keyword + "</span>");
-			const itemDom = "<li data-name='" +item[0] + "'>" + itemHTML + "</li>";
+
+			const itemHTML = item[0].replace(keyword, `<span>${keyword}</span>`);
+			const itemDom = `<li data-name='${item[0]}'>${itemHTML}</li>`;
 			listDomHTML += itemDom;
 		});
 
@@ -207,10 +208,10 @@ class ACRenderer {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+// document.addEventListener('DOMContentLoaded', function () {
 	const baseURL = "http://crong.codesquad.kr:8080/ac/";
     const domContainer = new DomContainer();
     const acResource = new ACResource();
     const acRenderer = new ACRenderer(domContainer);
     const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
-});
+// });
