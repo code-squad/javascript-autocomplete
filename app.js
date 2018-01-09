@@ -25,7 +25,7 @@ if (!Array.prototype.includes) {
         while (k < len) {
             currentElement = O[k];
             if (searchElement === currentElement ||
-                (searchElement !== searchElement 
+                (searchElement !== searchElement
                 	&& currentElement !== currentElement)) { // NaN !== NaN
                 return true;
             }
@@ -35,14 +35,28 @@ if (!Array.prototype.includes) {
     };
 }
 
-function Util() {
+function DomContainer() {
+	this.appBar = document.querySelector('.app-bar');
+	this.searchButton = document.querySelector('.search-button');
+	this.searchBar = document.querySelector('.search-bar');
+	this.searchField = document.querySelector('#search-field');
+	this.autoCompleteList = document.querySelector('.auto-complete-list');
 }
 
-var Util = {
-	$: function(ele) {
-		return document.querySelector(ele);
-	},
-	getData: function(url, callback) {
+DomContainer.prototype = {
+	getHoveredItem: function() {
+		return document.querySelector('.hover');
+	}
+}
+
+function ACResource() {
+    this.memo = {};
+	this.memoLog = [];
+	this.memoSize = 100;
+}
+
+ACResource.prototype = {
+    getData: function(url, callback) {
 		var openRequest = new XMLHttpRequest();
 		openRequest.addEventListener("load", function (e) {
 			var data = JSON.parse(openRequest.responseText);
@@ -50,57 +64,89 @@ var Util = {
 		}.bind(this));
 		openRequest.open("GET", url);
 		openRequest.send();
+	},
+    caching: function(key, value) {
+		if (this.memo.hasOwnProperty(key)) {
+			return;
+		}
+
+		if (this.memoLog.length > this.memoSize) {
+			let key = this.memoLog.shift();
+			delete this.memo[key];
+		}
+
+		this.memo[key] = value;
+		this.memoLog.push(key);
 	}
 }
 
+function ACResponder(domContainer, acResource, acRenderer, apiURL) {
+    this.domContainer = domContainer
+    this.acResource = acResource
+    this.acRenderer = acRenderer
+    this.apiURL = apiURL
 
-function DomContainer() {
-	this.appBar = Util.$('.app-bar');
-	this.searchButton = Util.$('.search-button');
-	this.searchBar = Util.$('.search-bar');
-	this.searchField = Util.$('#search-field');
-	this.autoCompleteList = Util.$('.auto-complete-list');
+    this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
+	this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
+
+	this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
+	this.domContainer.autoCompleteList.addEventListener('click', this.clickedItem.bind(this));
+
+	this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
 }
 
-var domContainerObj = {
-	getHoveredItem: function() {
-		return Util.$('.hover');
-	}
-}
+ACResponder.prototype = {
+    checkKeyCode: function(e) {
+		switch(e.keyCode){
+			case 38: //ArrowUp
+				this.acRenderer.pressedUpKey()
+				break;
+			case 40: //ArrowDown
+				this.acRenderer.pressedDownKey()
+				break;
+			case 13: //Enter
+				this.acRenderer.pressedEnterKey()
+                break;
+		}
+	},
+    changeSearchText: function(e) {
+		const keyword = e.target.value;
+		if (this.acResource.memo.hasOwnProperty(keyword)) {
+			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+			return;
+		}
 
-DomContainer.prototype = domContainerObj;
-
-function SearchWindow(apiUrl, domContainer) {
-	this.apiUrl = apiUrl;
-	this.domContainer = domContainer;
-	this.memo = {};
-	this.memoLog = [];
-	this.memoSize = 100;
-
-	this.setFocusOutListener();
-	this.setKeyboardListener();
-	this.setSearchButtonListener();
-	this.setSearchTextChangeListener();
-	this.setAutoCompleteClickListener();
-	this.setAutoCompleteHoverListener();
-}
-
-var searchWindowObj = {
-	requestApi: function(word, callback) {
-		const url = this.apiUrl + word;
-		Util.getData(url, function (returnData) {
-			const key = word;
-			const value = returnData[1];
-
-			this.memo[key] = value;
-			if (!this.memoLog.includes(key)) {
-				this.memoLog.push(key);
-			}
-
-			callback();
+		const url = this.apiURL + keyword;
+		this.acResource.getData(url, function(returnData) {
+			this.acResource.caching(keyword, returnData[1]);
+			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
 		}.bind(this));
 	},
-	updateRendering: function(keyword, autoComplete) {
+    mouseOver: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
+			return;
+		}
+        this.acRenderer.changeHoveredItem(item)
+	},
+	clickedItem: function(e) {
+		let item = e.target;
+		if(!item || item.nodeName !== 'LI') {
+			return;
+		}
+		this.acRenderer.putSelectedItemToField(item.dataset.name);
+	},
+	clickedSearchButton: function(e) {
+		this.acRenderer.launchSearchEvent();
+	}
+}
+
+function ACRenderer(domContainer) {
+    this.domContainer = domContainer
+}
+
+ACRenderer.prototype = {
+    updateRendering: function(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
 		if(!autoComplete){
 			listDom.innerHTML = ""
@@ -116,135 +162,63 @@ var searchWindowObj = {
 
 		listDom.innerHTML = listDomHTML;
 	},
-	getAutoCompleteList: function(word, callback) {
-		if (!this.memo.hasOwnProperty(word)) {
-			if (this.memoLog.length > this.memoSize) {
-				let key = this.memoLog.shift();
-				delete this.memo[key];
-			}
+    launchSearchEvent: function(keyword) {
+		// window.location.reload();
 
-			this.requestApi(word, function() {
-				callback(this.memo[word]);
-			}.bind(this));
-		} else {
-			callback(this.memo[word]);
+		domContainer.autoCompleteList.innerHTML = "";
+		domContainer.searchField.value = "";
+	},
+    pressedUpKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            return;
+        }
+        if(currHoveredItem.previousElementSibling) {
+            currHoveredItem.previousElementSibling.classList.add('hover');
+            currHoveredItem.classList.remove('hover');
+        }
+    },
+    pressedDownKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            const autoCompleteList = this.domContainer.autoCompleteList;
+            if(autoCompleteList.childNodes) {
+                autoCompleteList.childNodes[0].classList.add('hover')
+            }
+            return;
+        }
+        if(currHoveredItem.nextElementSibling) {
+            currHoveredItem.nextElementSibling.classList.add('hover');
+            currHoveredItem.classList.remove('hover');
+        }
+    },
+    pressedEnterKey() {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+        if(!currHoveredItem) {
+            this.launchSearchEvent();
+            return;
+        }
+        this.putSelectedItemToField(currHoveredItem.dataset.name);
+    },
+    changeHoveredItem(item) {
+        let currHoveredItem = this.domContainer.getHoveredItem();
+		if(currHoveredItem) {
+			currHoveredItem.classList.remove('hover');
 		}
-	},
-	launchSearchEvent: function(keyword) {
-		window.location.reload();
-	},
-	setFocusOutListener: function() {
-		const searchField = this.domContainer.searchField;
+		item.classList.add('hover');
+    },
+    putSelectedItemToField: function(word) {
+        const searchField = this.domContainer.searchField;
+        searchField.value = word;
 
-		searchField.addEventListener('focusout', function(e) {
-			this.domContainer.autoCompleteList.innerHTML = '';
-		}.bind(this));
-	},
-	setKeyboardListener: function() {
-		const searchField = this.domContainer.searchField;
-
-		searchField.addEventListener('keydown', function(e) {
-			let currHoveredItem = this.domContainer.getHoveredItem();
-
-			switch(e.keyCode){
-				case 38: //ArrowUp
-					if(!currHoveredItem) {
-						return;
-					}
-
-					if(currHoveredItem.previousElementSibling) {
-						currHoveredItem.previousElementSibling.classList.add('hover');
-						currHoveredItem.classList.remove('hover');
-					}
-					break;
-
-				case 40: //ArrowDown
-					if(!currHoveredItem) {
-						const autoCompleteList = this.domContainer.autoCompleteList;
-						if(autoCompleteList.childNodes) {
-							autoCompleteList.childNodes[0].classList.add('hover')
-						}
-						return;
-					}
-
-					if(currHoveredItem.nextElementSibling) {
-						currHoveredItem.nextElementSibling.classList.add('hover');
-						currHoveredItem.classList.remove('hover');
-					}
-					break;
-
-				case 13: //Enter
-					if(!currHoveredItem) {
-						this.launchSearchEvent();
-						return;
-					}
-
-					this.putSelectedItemToField(currHoveredItem.dataset.name);
-			}
-		}.bind(this));
-	},
-	setAutoCompleteHoverListener: function() {
-		const autoCompleteList = this.domContainer.autoCompleteList;
-
-		autoCompleteList.addEventListener('mouseover', function(e) {
-			let listItem = e.target;
-
-			if(!listItem || listItem.nodeName !== 'LI') {
-				return;
-			}
-
-			let currHoveredItem = this.domContainer.getHoveredItem();
-
-			if(currHoveredItem) {
-				currHoveredItem.classList.remove('hover');
-			}
-
-			listItem.classList.add('hover');
-		}.bind(this));
-	},
-	setAutoCompleteClickListener: function() {
-		const autoCompleteList = this.domContainer.autoCompleteList;
-
-		autoCompleteList.addEventListener('click', function(e) {
-			let listItem = e.target;
-
-			if(!listItem || listItem.nodeName !== 'LI') {
-				return;
-			}
-
-			this.putSelectedItemToField(listItem.dataset.name);
-		}.bind(this));
-	},
-	setSearchButtonListener: function() {
-		const searchButton = this.domContainer.searchButton;
-
-		searchButton.addEventListener('click', function(e) {
-
-			this.launchSearchEvent();
-		}.bind(this));
-	},
-	setSearchTextChangeListener: function() {
-		this.domContainer.searchField.addEventListener('input', function(e) {
-			const keyword = e.target.value;
-			this.getAutoCompleteList(keyword, function(autoComplete) {
-				this.updateRendering(keyword, autoComplete);
-			}.bind(this));
-		}.bind(this));
-	},
-	putSelectedItemToField: function(word) {
-		const searchField = this.domContainer.searchField;
-		searchField.value = word;
-
-		this.domContainer.autoCompleteList.innerHTML = '';
-	}
+        this.domContainer.autoCompleteList.innerHTML = '';
+    }
 }
 
-SearchWindow.prototype = searchWindowObj;
-
-document.addEventListener('DOMContentLoaded', function () {
-	const baseApiUrl = "http://crong.codesquad.kr:8080/ac/";
-
-	const domContainer = new DomContainer();
-
-	const searchWindow = new SearchWindow(baseApiUrl, domContainer);
-});
+// document.addEventListener('DOMContentLoaded', function () {
+	const baseURL = "http://crong.codesquad.kr:8080/ac/";
+    const domContainer = new DomContainer();
+    const acResource = new ACResource();
+    const acRenderer = new ACRenderer(domContainer);
+    const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
+// });
