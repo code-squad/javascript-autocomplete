@@ -168,16 +168,21 @@ a {
     z-index: 1
 }
 
+.auto-complete-window > ul > li {
+	cursor: pointer;
+	padding: 3px;
+}
+
 .auto-complete-list > li > span {
     color: #D20052;
 }
 
-.hover {
-	background-color: #7B9F93;
+.recent-keyword-list > li {
+	color: #610B5E;
 }
 
-.auto-complete-list > li {
-	cursor: pointer;
+.hover {
+	background-color: #7B9F93;
 }
 
 .main-contents {
