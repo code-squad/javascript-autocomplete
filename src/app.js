@@ -250,3 +250,4 @@ document.addEventListener('DOMContentLoaded', function () {
     const acRenderer = new ACRenderer(domContainer);
     const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
 });
+export {DomContainer, ACResource, ACResponder, ACRenderer}

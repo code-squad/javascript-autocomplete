@@ -1,4 +1,10 @@
 const assert = chai.assert;
+import {DomContainer, ACResource, ACResponder, ACRenderer} from '../src/app.js'
+const baseURL = "http://crong.codesquad.kr:8080/ac/";
+const domContainer = new DomContainer();
+const acResource = new ACResource();
+const acRenderer = new ACRenderer(domContainer);
+const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
 
 describe('ACResource.getData', function(){
 	it('"오징" 검색', function(done) {

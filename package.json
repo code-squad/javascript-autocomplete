@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch --config ./test/webpack.config.test.js --config ./webpack.config.js"
   },
   "repository": {
     "type": "git",
