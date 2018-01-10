@@ -82,9 +82,9 @@ class DomContainer {
 
 class ACResource {
     constructor() {
-        this.memo = {};
-        this.memoLog = [];
-        this.memoSize = 100;
+        this.acData = this.getLocalStorageItem('acData', {});
+        this.acDataLog = this.getLocalStorageItem('acDataLog', []);
+        this.acDataSize = 100;
     }
     getData(url) {
         return fetch(url)
@@ -96,18 +96,31 @@ class ACResource {
         })
     }
     caching(key, value) {
-        if (this.memo.hasOwnProperty(key)) {
+        if (this.acData.hasOwnProperty(key)) {
             return;
         }
 
-        if (this.memoLog.length > this.memoSize) {
-            const key = this.memoLog.shift();
-            delete this.memo[key];
+        if (this.acDataLog.length > this.acDataSize) {
+            const key = this.acDataLog.shift();
+            delete this.acData[key];
         }
 
-        this.memo[key] = value;
-        this.memoLog.push(key);
+        this.acData[key] = value;
+        this.acDataLog.push(key);
+
+        this.setLocalStorageItem('acData', this.acData);
+        this.setLocalStorageItem('acDataLog', this.acDataLog);
     }
+
+	getLocalStorageItem(key, defaultValue) {
+		if (!localStorage.hasOwnProperty(key)) {
+			return defaultValue;
+		}
+		return JSON.parse(localStorage.getItem(key));
+	}
+	setLocalStorageItem(key, value) {
+		localStorage.setItem(key, JSON.stringify(value));
+	}
 }
 
 class ACResponder {
@@ -138,15 +151,15 @@ class ACResponder {
 	}
     changeSearchText(e) {
 		const keyword = e.target.value;
-		if (this.acResource.memo.hasOwnProperty(keyword)) {
-			this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+		if (this.acResource.acData.hasOwnProperty(keyword)) {
+			this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword]);
 			return;
 		}
 
 		const url = this.apiURL + keyword;
 		this.acResource.getData(url).then((data) => {
             this.acResource.caching(keyword, data[1]);
-    		this.acRenderer.updateRendering(keyword, this.acResource.memo[keyword]);
+    		this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword]);
         })
 	}
     mouseOver(e) {
@@ -246,6 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const acResource = new ACResource();
     const acRenderer = new ACRenderer(domContainer);
     const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
+    console.log('까꿍')
 });
 
 
