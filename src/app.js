@@ -27,16 +27,15 @@ class ACResource {
         })
     }
     caching(key, value) {
-        if (this.acData.hasOwnProperty(key)) {
-            return;
-        }
-
         if (this.acDataLog.length > this.acDataSize) {
             const key = this.acDataLog.shift();
             delete this.acData[key];
         }
 
-        this.acData[key] = value;
+        this.acData[key] = {
+            result: value,
+            create: Date.now()
+        }
         this.acDataLog.push(key);
 
         this.setLocalStorageItem('acData', this.acData);
@@ -52,6 +51,14 @@ class ACResource {
 	setLocalStorageItem(key, value) {
 		localStorage.setItem(key, JSON.stringify(value));
 	}
+    checkValidation(keyword) {
+        const expiredTime = 6 * 60 * 60 * 1000
+        // const expiredTime =  5 * 1000
+        if(this.acData.hasOwnProperty(keyword) && (Date.now() - this.acData[keyword].create) < expiredTime) {
+            return true;
+        }
+        return false;
+    }
 }
 
 class ACResponder {
@@ -82,15 +89,18 @@ class ACResponder {
 	}
     changeSearchText(e) {
 		const keyword = e.target.value;
-		if (this.acResource.acData.hasOwnProperty(keyword)) {
-			this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword]);
-			return;
-		}
-
+        if(!keyword) {
+            this.acRenderer.updateRendering()
+            return;
+        }
+        if(this.acResource.checkValidation(keyword)) {
+            this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword].result);
+            return
+        }
 		const url = this.apiURL + keyword;
 		this.acResource.getData(url).then((data) => {
             this.acResource.caching(keyword, data[1]);
-    		this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword]);
+    		this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword].result);
         })
 	}
     mouseOver(e) {
