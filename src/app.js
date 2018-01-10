@@ -15,6 +15,8 @@ class ACResource {
         this.acData = this.getLocalStorageItem('acData', {});
         this.acDataLog = this.getLocalStorageItem('acDataLog', []);
         this.acDataSize = 100;
+        this.recentData = this.getLocalStorageItem('recentData', []);
+        this.recentDataSize = 5;
     }
     getData(url) {
         return fetch(url)
@@ -25,8 +27,8 @@ class ACResource {
             console.log("error: ", err);
         })
     }
-    caching(key, value) {
-        if (this.acDataLog.length > this.acDataSize) {
+    cacheACData(key, value) {
+        if (this.acDataLog.length >= this.acDataSize) {
             const key = this.acDataLog.shift();
             delete this.acData[key];
         }
@@ -40,7 +42,14 @@ class ACResource {
         this.setLocalStorageItem('acData', this.acData);
         this.setLocalStorageItem('acDataLog', this.acDataLog);
     }
+    cacheRecentData(key) {
+		if (this.recentData.length >= this.recentDataSize) {
+			this.recentData.shift();
+		}
 
+		this.recentData.push(key);
+		this.setLocalStorageItem('recentData', this.recentData);
+	}
 	getLocalStorageItem(key, defaultValue) {
 		if (!localStorage.hasOwnProperty(key)) {
 			return defaultValue;
@@ -77,13 +86,13 @@ class ACResponder {
     checkKeyCode(e) {
 		switch(e.keyCode){
 			case 38: //ArrowUp
-				this.acRenderer.pressedUpKey()
+				this.acRenderer.pressUpKey()
 				break;
 			case 40: //ArrowDown
-				this.acRenderer.pressedDownKey()
+				this.acRenderer.pressDownKey()
 				break;
 			case 13: //Enter
-				this.acRenderer.pressedEnterKey()
+				this.acRenderer.pressEnterKey()
                 break;
 		}
 	}
@@ -99,7 +108,7 @@ class ACResponder {
         }
 		const url = this.apiURL + keyword;
 		this.acResource.getData(url).then((data) => {
-            this.acResource.caching(keyword, data[1]);
+            this.acResource.cacheACData(keyword, data[1]);
     		this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword].result);
         })
 	}
@@ -118,11 +127,16 @@ class ACResponder {
 		this.acRenderer.putSelectedItemToField(item.dataset.name);
 	}
 	clickSearchButton(e) {
-		this.acRenderer.launchSearchEvent();
+		this.launchSearchEvent(this.domContainer.searchField.value);
+		this.acRenderer.clearSearchWindow();
 	}
     clickSearchField(e) {
         this.domContainer.recentKeywordList.style.display = "block";
     }
+	launchSearchEvent(keyword) {
+		this.acResource.cacheRecentData(keyword);
+		this.acRenderer.clearSearchWindow();
+	}
 }
 
 class ACRenderer {
@@ -149,11 +163,11 @@ class ACRenderer {
 
 		listDom.innerHTML = listDomHTML;
 	}
-    launchSearchEvent(keyword) {
+    clearSearchWindow() {
 		this.domContainer.autoCompleteList.innerHTML = "";
 		this.domContainer.searchField.value = "";
 	}
-    pressedUpKey() {
+    pressUpKey() {
         const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             return;
@@ -163,7 +177,7 @@ class ACRenderer {
             currHoveredItem.classList.remove('hover');
         }
     }
-    pressedDownKey() {
+    pressDownKey() {
         const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             const autoCompleteList = this.domContainer.autoCompleteList;
@@ -177,12 +191,12 @@ class ACRenderer {
             currHoveredItem.classList.remove('hover');
         }
     }
-    pressedEnterKey() {
+    pressEnterKey() {
         const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
-            this.launchSearchEvent();
             return;
         }
+
         this.putSelectedItemToField(currHoveredItem.dataset.name);
     }
     changeHoveredItem(item) {
