@@ -69,11 +69,10 @@
 
 class DomContainer {
     constructor() {
-        this.appBar = document.querySelector('.app-bar');
         this.searchButton = document.querySelector('.search-button');
-        this.searchBar = document.querySelector('.search-bar');
         this.searchField = document.querySelector('#search-field');
         this.autoCompleteList = document.querySelector('.auto-complete-list');
+        this.recentKeywordList = document.querySelector('.recent-keyword-list')
     }
     getHoveredItem() {
 		return document.querySelector('.hover');
@@ -139,9 +138,10 @@ class ACResponder {
 
         this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
         this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
+        this.domContainer.searchField.addEventListener('focusin', this.clickSearchField.bind(this));
         this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
-        this.domContainer.autoCompleteList.addEventListener('click', this.clickedItem.bind(this));
-        this.domContainer.searchButton.addEventListener('click', this.clickedSearchButton.bind(this));
+        this.domContainer.autoCompleteList.addEventListener('click', this.clickItem.bind(this));
+        this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
     }
     checkKeyCode(e) {
 		switch(e.keyCode){
@@ -179,16 +179,19 @@ class ACResponder {
 		}
         this.acRenderer.changeHoveredItem(item)
 	}
-	clickedItem(e) {
+	clickItem(e) {
 		const item = e.target;
 		if(!item || item.nodeName !== 'LI') {
 			return;
 		}
 		this.acRenderer.putSelectedItemToField(item.dataset.name);
 	}
-	clickedSearchButton(e) {
+	clickSearchButton(e) {
 		this.acRenderer.launchSearchEvent();
 	}
+    clickSearchField(e) {
+        this.domContainer.recentKeywordList.style.display = "block";
+    }
 }
 
 class ACRenderer {
@@ -197,14 +200,17 @@ class ACRenderer {
     }
     updateRendering(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
-		if(!autoComplete){
+        if(!keyword) {
+            this.domContainer.recentKeywordList.style.display = "block";
+        } else {
+            this.domContainer.recentKeywordList.style.display = "none";    
+        }
+		if(!autoComplete) {
 			listDom.innerHTML = ""
 			return false
 		}
-
 		let listDomHTML = "";
 		autoComplete.forEach((item) => {
-
 			const itemHTML = item[0].replace(keyword, `<span>${keyword}</span>`);
 			const itemDom = `<li data-name='${item[0]}'>${itemHTML}</li>`;
 			listDomHTML += itemDom;

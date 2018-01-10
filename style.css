@@ -21,10 +21,6 @@ a {
     margin: auto;
 }
 
-.hover_link {
-
-}
-
 .hover-link:hover {
 	color: #25d4ce;
     cursor: pointer;
@@ -171,6 +167,23 @@ a {
 .auto-complete-window > ul > li {
 	cursor: pointer;
 	padding: 3px;
+}
+
+.recent-keyword-list {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background: #84D4D0;
+    width: 100%;
+}
+
+.auto-complete-list {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background: #84D4D0;
+    width: 100%;
 }
 
 .auto-complete-list > li > span {
