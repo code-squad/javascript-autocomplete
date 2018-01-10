@@ -135,6 +135,10 @@ class ACResource {
 	setLocalStorageItem(key, value) {
 		localStorage.setItem(key, JSON.stringify(value));
 	}
+    removeRecentItem(index) {
+        this.recentData.splice(index, 1);
+        this.setLocalStorageItem('recentData', this.recentData);
+    }
     checkValidation(keyword) {
         const expiredTime = 6 * 60 * 60 * 1000
         // const expiredTime =  5 * 1000
@@ -158,6 +162,7 @@ class ACResponder {
         this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
         this.domContainer.autoCompleteList.addEventListener('click', this.clickItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
+        this.domContainer.recentKeywordList.addEventListener('click', this.clickRemoveButton.bind(this));
 
         this.acRenderer.updateRecentList(this.acResource.recentData)
     }
@@ -205,16 +210,23 @@ class ACResponder {
 		this.acRenderer.putSelectedItemToField(item.dataset.name);
 	}
 	clickSearchButton(e) {
-		this.launchSearchEvent(this.domContainer.searchField.value);
+        this.acResource.cacheRecentData(this.domContainer.searchField.value);
+        this.acRenderer.updateRecentList(this.acResource.recentData)
 		this.acRenderer.clearSearchWindow();
 	}
     clickSearchField(e) {
         this.domContainer.recentKeywordList.style.display = "block";
     }
-	launchSearchEvent(keyword) {
-		this.acResource.cacheRecentData(keyword);
-		this.acRenderer.clearSearchWindow();
-	}
+    clickRemoveButton(e) {
+        const target = e.target;
+        if(!target || target.nodeName !== "IMG") {
+            return;
+        }
+        const parent = target.parentNode.parentNode;
+        const index = Array.prototype.indexOf.call(parent.children, target.parentNode);
+        this.acResource.removeRecentItem(index)
+        this.acRenderer.updateRecentList(this.acResource.recentData)
+    }
 }
 
 class ACRenderer {
@@ -306,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const acResource = new ACResource();
     const acRenderer = new ACRenderer(domContainer);
     const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
-    console.log('까꿍')
 });
 
 
