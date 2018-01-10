@@ -166,19 +166,21 @@ a {
 
 .auto-complete-window > ul > li {
 	cursor: pointer;
-	padding: 3px;
+	padding: 3px 8px;
+}
+
+.auto-complete-window > ul > li > img {
+    content: url("./res/remove-button.png");
+    float: right;
+    width: 15px;
+    height: 15px;
 }
 
 .recent-keyword-list {
     display: none;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    background: #84D4D0;
-    width: 100%;
 }
 
-.auto-complete-list {
+.recent-keyword-list, .auto-complete-list {
     position: absolute;
     top: 0px;
     left: 0px;

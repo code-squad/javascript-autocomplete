@@ -43,11 +43,18 @@ class ACResource {
         this.setLocalStorageItem('acDataLog', this.acDataLog);
     }
     cacheRecentData(key) {
+        if(!key) {
+            return;
+        }
+        const index = this.recentData.indexOf(key)
+        if(index !== -1) {
+            this.recentData.splice(index, 1)
+        }
 		if (this.recentData.length >= this.recentDataSize) {
-			this.recentData.shift();
+			this.recentData.pop();
 		}
 
-		this.recentData.push(key);
+		this.recentData.unshift(key);
 		this.setLocalStorageItem('recentData', this.recentData);
 	}
 	getLocalStorageItem(key, defaultValue) {
@@ -82,6 +89,8 @@ class ACResponder {
         this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
         this.domContainer.autoCompleteList.addEventListener('click', this.clickItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
+
+        this.acRenderer.updateRecentList(this.acResource.recentData)
     }
     checkKeyCode(e) {
 		switch(e.keyCode){
@@ -99,17 +108,17 @@ class ACResponder {
     changeSearchText(e) {
 		const keyword = e.target.value;
         if(!keyword) {
-            this.acRenderer.updateRendering()
+            this.acRenderer.updateACList()
             return;
         }
         if(this.acResource.checkValidation(keyword)) {
-            this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword].result);
+            this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
             return
         }
 		const url = this.apiURL + keyword;
 		this.acResource.getData(url).then((data) => {
             this.acResource.cacheACData(keyword, data[1]);
-    		this.acRenderer.updateRendering(keyword, this.acResource.acData[keyword].result);
+    		this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
         })
 	}
     mouseOver(e) {
@@ -143,12 +152,12 @@ class ACRenderer {
     constructor(domContainer) {
         this.domContainer = domContainer
     }
-    updateRendering(keyword, autoComplete) {
+    updateACList(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
         if(!keyword) {
             this.domContainer.recentKeywordList.style.display = "block";
         } else {
-            this.domContainer.recentKeywordList.style.display = "none";    
+            this.domContainer.recentKeywordList.style.display = "none";
         }
 		if(!autoComplete) {
 			listDom.innerHTML = ""
@@ -163,6 +172,14 @@ class ACRenderer {
 
 		listDom.innerHTML = listDomHTML;
 	}
+    updateRecentList(recentData) {
+        let listDomHTML = "";
+        recentData.forEach((data) => {
+            const dataHTML = `<li>${data}<img></li>`
+            listDomHTML += dataHTML
+        })
+        this.domContainer.recentKeywordList.innerHTML = listDomHTML
+    }
     clearSearchWindow() {
 		this.domContainer.autoCompleteList.innerHTML = "";
 		this.domContainer.searchField.value = "";
