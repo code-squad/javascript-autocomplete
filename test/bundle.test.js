@@ -279,11 +279,11 @@ class ACResource {
 }
 
 class ACResponder {
-    constructor(domContainer, acResource, acRenderer, apiURL) {
-        this.domContainer = domContainer
-        this.acResource = acResource
-        this.acRenderer = acRenderer
-        this.apiURL = apiURL
+    constructor(parameter) {
+		this.domContainer = parameter['domContainer'];
+		this.acResource = parameter['acResource'];
+		this.acRenderer = parameter['acRenderer'];
+		this.apiURL = parameter['apiURL'];
 
         this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
         this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
@@ -399,8 +399,10 @@ class ACRenderer {
         if(!currHoveredItem) {
             return;
         }
-        if(currHoveredItem.previousElementSibling) {
-            currHoveredItem.previousElementSibling.classList.add('hover');
+
+		const previousSibling = currHoveredItem.previousElementSibling;
+        if(previousSibling) {
+			previousSibling.classList.add('hover');
             currHoveredItem.classList.remove('hover');
         }
     }
@@ -413,8 +415,10 @@ class ACRenderer {
             }
             return;
         }
-        if(currHoveredItem.nextElementSibling) {
-            currHoveredItem.nextElementSibling.classList.add('hover');
+
+		const nextSibling = currHoveredItem.nextElementSibling;
+        if(nextSibling) {
+			nextSibling.classList.add('hover');
             currHoveredItem.classList.remove('hover');
         }
     }
@@ -446,7 +450,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const domContainer = new DomContainer();
     const acResource = new ACResource();
     const acRenderer = new ACRenderer(domContainer);
-    const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
+    const acResponder = new ACResponder({
+		domContainer: domContainer,
+		acResource: acResource,
+		acRenderer: acRenderer,
+		apiURL: baseURL
+	});
 });
 
 
