@@ -83,7 +83,6 @@ const acResponder = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["c" /* ACRespo
 	apiURL: baseURL
 });
 localStorage.clear();
-console.log(localStorage);
 
 describe('ACResource.getData', function(){
 	it('"오징" 검색', function(done) {
@@ -209,6 +208,7 @@ describe('searchButton click', function() {
 	})
 })
 
+
 /***/ }),
 /* 1 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
@@ -225,9 +225,6 @@ class DomContainer {
         this.autoCompleteList = document.querySelector('.auto-complete-list');
         this.recentKeywordList = document.querySelector('.recent-keyword-list')
     }
-    getHoveredItem() {
-		return document.querySelector('.hover');
-	}
 }
 
 class ACResource {
@@ -377,7 +374,7 @@ class ACResponder {
             return;
         }
         const parent = target.parentNode.parentNode;
-        const index = Array.prototype.indexOf.call(parent.children, target.parentNode);
+        const index = Array.from(parent.children).indexOf(target.parentNode);
         this.acResource.removeRecentItem(index)
         this.acRenderer.updateRecentList(this.acResource.recentData)
     }
@@ -386,13 +383,15 @@ class ACResponder {
 class ACRenderer {
     constructor(domContainer) {
         this.domContainer = domContainer
+        this.hoveredItem = ""
     }
     updateACList(keyword, autoComplete) {
 		const listDom = this.domContainer.autoCompleteList;
+        const recentKeywordList = this.domContainer.recentKeywordList
         if(!keyword) {
-            this.domContainer.recentKeywordList.style.display = "block";
+            recentKeywordList.style.display = "block";
         } else {
-            this.domContainer.recentKeywordList.style.display = "none";
+            recentKeywordList.style.display = "none";
         }
 		if(!autoComplete) {
 			listDom.innerHTML = ""
@@ -420,49 +419,47 @@ class ACRenderer {
 		this.domContainer.searchField.value = "";
 	}
     pressUpKey() {
-        const currHoveredItem = this.domContainer.getHoveredItem();
-        if(!currHoveredItem) {
+        if(!this.hoveredItem) {
             return;
         }
 
-		const previousSibling = currHoveredItem.previousElementSibling;
+		const previousSibling = this.hoveredItem.previousElementSibling;
         if(previousSibling) {
 			previousSibling.classList.add('hover');
-            currHoveredItem.classList.remove('hover');
+            this.hoveredItem.classList.remove('hover');
+            this.hoveredItem = previousSibling
         }
     }
     pressDownKey() {
-        console.log(this);
-        const currHoveredItem = this.domContainer.getHoveredItem();
-        if(!currHoveredItem) {
+        if(!this.hoveredItem) {
             const autoCompleteList = this.domContainer.autoCompleteList;
             if(autoCompleteList.childNodes) {
                 autoCompleteList.childNodes[0].classList.add('hover')
+                this.hoveredItem = autoCompleteList.childNodes[0]
             }
             return;
         }
 
-		const nextSibling = currHoveredItem.nextElementSibling;
+		const nextSibling = this.hoveredItem.nextElementSibling;
         if(nextSibling) {
 			nextSibling.classList.add('hover');
-            currHoveredItem.classList.remove('hover');
+            this.hoveredItem.classList.remove('hover');
+            this.hoveredItem = nextSibling
         }
     }
     pressEnterKey() {
-        // console.log(this);
-        const currHoveredItem = this.domContainer.getHoveredItem();
-        if(!currHoveredItem) {
+        if(!this.hoveredItem) {
             return;
         }
 
-        this.putSelectedItemToField(currHoveredItem.dataset.name);
+        this.putSelectedItemToField(this.hoveredItem.dataset.name);
     }
     changeHoveredItem(item) {
-        const currHoveredItem = this.domContainer.getHoveredItem();
-		if(currHoveredItem) {
-			currHoveredItem.classList.remove('hover');
+		if(this.hoveredItem) {
+			this.hoveredItem.classList.remove('hover');
 		}
 		item.classList.add('hover');
+        this.hoveredItem = item
     }
     putSelectedItemToField(word) {
         const searchField = this.domContainer.searchField;

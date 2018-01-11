@@ -11,7 +11,6 @@ const acResponder = new ACResponder({
 	apiURL: baseURL
 });
 localStorage.clear();
-console.log(localStorage);
 
 describe('ACResource.getData', function(){
 	it('"오징" 검색', function(done) {
