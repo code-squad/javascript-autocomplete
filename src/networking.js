@@ -1,44 +1,38 @@
 class Cache {
     constructor() {
-        this.networkLog = []; 
-        this.networkCache = {};
-        this.recentCache = [];
-        this.init();
-    }
-
-    init() {
+        this.localData = {
+            "networkLog" : [], 
+            "networkCache" : {},
+            "recentCache" : []
+        }
+        
         this.loadStorage();
         window.addEventListener("beforeunload", () => this.saveCache());
     }
 
     loadStorage() {
-        const networkLog = localStorage.getItem("networkLog");
-        if(networkLog) {
-            this.networkLog = JSON.parse(networkLog);
-        }
-        const networkCache = window.localStorage.getItem("networkCache");
-        if(networkCache) {
-            this.networkCache = JSON.parse(networkCache);
-        }
+        const cacheList = Object.keys(this.localData); 
 
-        const recentCache = window.localStorage.getItem("recentCache");
-        if(recentCache) {
-            this.recentCache = JSON.parse(recentCache);
-        }
+        cacheList.forEach((key) => {
+            const data = localStorage.getItem(key);
+            if(data) {
+                this.localData[key] = JSON.parse(data);
+            }
+        }); 
     }
 
     saveCache() {
-        window.localStorage.setItem("networkLog", JSON.stringify(this.networkLog));
-        window.localStorage.setItem("networkCache", JSON.stringify(this.networkCache));
-        window.localStorage.setItem("recentCache", JSON.stringify(this.recentCache));
+        Object.keys(this.localData).forEach((key) => {
+            window.localStorage.setItem(key, JSON.stringify(this.localData[key]));
+        }); 
     }
 }
 
 class Networking {
-    constructor(storage) {
-        this.cacheSize = 100; 
-        this.log = storage.networkLog; 
-        this.cache = storage.networkCache;
+    constructor(storage, cacheSize) {
+        this.cacheSize = cacheSize; 
+        this.log = storage.localData["networkLog"]; 
+        this.cache = storage.localData["networkCache"];
     }
 
     insertCacheData(query, data) {
@@ -54,22 +48,24 @@ class Networking {
         this.log.push(query)
     }
 
-    isCacheInvalid(query) {
+    // timeLimit in ms. 
+    isCacheInvalid(query, timeLimit) {
         if(!this.cache[query]) return true;
 
         const timeNow = Date.now();
         const timeCache = this.cache[query]["time"];
-        //6시간 이상 차이났을때를 위한 부분이다.(친철한 톤)
-        const timeDiff = (timeNow - timeCache)/1000/60/60/6;
+        const timeDiff = timeNow - timeCache;
 
-        return timeDiff >= 1
+        return timeDiff >= timeLimit
     }
 
     sendAPIRequest(query) {
         let promise;
+        // 6 hours in ms. 
+        const timeLimit = 1000 * 60 * 60 * 6; 
 
         if(this.isCacheInvalid(query)) {
-            promise = new Promise((resolve) => {
+            promise = new Promise((resolve, timeLimit) => {
                 var xhr = new XMLHttpRequest();
                 xhr.addEventListener("load", (e) => {
                     var data = this.convertData(xhr.responseText);

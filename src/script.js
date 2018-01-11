@@ -1,7 +1,13 @@
 import {Networking, Cache} from './networking.js'
 
-function $(query) {
-    return document.querySelector(query);
+class Util {
+    static $(query) {
+        return document.querySelector(query);
+    }
+
+    static redirect(param) {
+        window.location.replace(param);
+    }
 }
 
 class AutoComplete {
@@ -10,7 +16,7 @@ class AutoComplete {
         this.resultListDOM = resultList;
         this.selectedIndex = -1;
         this.listDOM = this.resultListDOM.children[0];
-        this.cache = storage.recentCache;
+        this.cache = storage.localData["recentCache"];
     }
 
     insertCacheData(query) {
@@ -48,7 +54,8 @@ class AutoComplete {
         }
         this.insertCacheData(currData);
 
-        window.location.replace("?name=" + currData);
+        console.log(Util.redirect)
+        Util.redirect("?name=" + currData);
     }
 
     upKeyPressed() {
@@ -71,7 +78,7 @@ class AutoComplete {
     }
 
     mouseHovered(item) {
-        let index = Array.prototype.indexOf.call(this.listDOM.children, item);
+        let index = Array.from(this.listDOM.children).indexOf(item); 
 
         this.changeSelected(index);
     }
@@ -84,6 +91,7 @@ class EventHandler {
         this.inputText = inputBox;
         this.searchButton = searchButton;
         this.searchBar = searchBar;
+
     }
 
     init() {
@@ -177,15 +185,14 @@ class EventHandler {
 
 document.addEventListener('DOMContentLoaded', function () {
     const storage = new Cache();
-    const autoComplete = new AutoComplete($('.result_list'), storage);
+    const autoComplete = new AutoComplete(Util.$('.result_list'), storage);
 
-    const eventHandler = new EventHandler(new Networking(storage),
+    const eventHandler = new EventHandler(new Networking(storage, 100),
         autoComplete,
-        $('#search_bar'),
-        $('#input_box'),
-        $('#search_button'));
+        Util.$('#search_bar'),
+        Util.$('#input_box'),
+        Util.$('#search_button'));
     eventHandler.init()
-
 });
 
-export {EventHandler, AutoComplete, Networking, Cache}
+export {EventHandler, AutoComplete, Networking, Cache, Util}
