@@ -7,11 +7,34 @@
     </head>
     <body>
         <div id="mocha"></div>
+        <div style="display: none;">
+            <header>
+                <div id="information">
+                    <span>배민찬 앱 다운로드</span>
+                    <ul>
+                        <li>로그인</li>
+                        <li>회원가입</li>
+                        <li>마이페이지</li>
+                        <li>고객센터</li>
+                        <li>새벽배송 지역검색</li>
+                        <li>이벤트 게시판</li>
+                        <li><b>장바구니</b></li>
+                    </ul>
+                </div>
+                <div id="header">
+                    <form id="search_bar" action="#">
+                        <input type="text" name="" value="" id="input_box" autocomplete="off">
+                        <button type="button" name="button" id="search_button"></button>
+                        <div class="result_list"></div>
+                    </form>
+                </div>
+            </header>
+        </div>
         <script src="../node_modules/mocha/mocha.js"></script>
         <script src="../node_modules/chai/chai.js"></script>
-        <script type="text/javascript" src="../script.js"></script>
         <script>mocha.setup('bdd')</script>
-        <script src="main.test.js"></script>
+        <script type="text/javascript" src="bundle-test.js"></script>
+        <!-- <script src="main.test.js"></script> -->
         <script>
             mocha.run();
         </script>
