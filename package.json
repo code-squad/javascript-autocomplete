@@ -1,0 +1,27 @@
+{
+  "name": "javascript-autocomplete-b",
+  "version": "1.0.0",
+  "description": "woowa 교육을 위한 자동완성",
+  "main": "app.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "watch": "webpack --watch --config ./test/webpack.config.test.js --config ./webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HannaJeon/javascript-autocomplete.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HannaJeon/javascript-autocomplete/issues"
+  },
+  "homepage": "https://github.com/HannaJeon/javascript-autocomplete#readme",
+  "devDependencies": {
+    "webpack": "^3.10.0"
+  }
+}

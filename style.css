@@ -21,10 +21,6 @@ a {
     margin: auto;
 }
 
-.hover_link {
-
-}
-
 .hover-link:hover {
 	color: #25d4ce;
     cursor: pointer;
@@ -168,16 +164,40 @@ a {
     z-index: 1
 }
 
+.auto-complete-window > ul > li {
+	cursor: pointer;
+	padding: 3px 8px;
+}
+
+.auto-complete-window > ul > li > img {
+    content: url("./res/remove-button.png");
+    float: right;
+    width: 15px;
+    height: 15px;
+}
+
+.recent-keyword-list {
+    display: none;
+}
+
+.recent-keyword-list, .auto-complete-list {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background: #84D4D0;
+    width: 100%;
+}
+
 .auto-complete-list > li > span {
     color: #D20052;
 }
 
-.hover {
-	background-color: #7B9F93;
+.recent-keyword-list > li {
+	color: #610B5E;
 }
 
-.auto-complete-list > li {
-	cursor: pointer;
+.hover {
+	background-color: #7B9F93;
 }
 
 .main-contents {
