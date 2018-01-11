@@ -237,6 +237,7 @@ class ACResource {
         this.acDataSize = 100;
         this.recentData = this.getLocalStorageItem('recentData', []);
         this.recentDataSize = 5;
+        this.expiredTime = 6 * 60 * 60 * 1000
     }
     getData(url) {
         return fetch(url)
@@ -267,9 +268,6 @@ class ACResource {
         this.setLocalStorageItem('acDataLog', this.acDataLog);
     }
     cacheRecentData(key) {
-        if(!key) {
-            return;
-        }
         const index = this.recentData.indexOf(key)
         if(index !== -1) {
             this.recentData.splice(index, 1)
@@ -294,13 +292,12 @@ class ACResource {
         this.recentData.splice(index, 1);
         this.setLocalStorageItem('recentData', this.recentData);
     }
-    checkValidation(keyword) {
-        const expiredTime = 6 * 60 * 60 * 1000
-        // const expiredTime =  5 * 1000
-        if(this.acData.hasOwnProperty(keyword) && (Date.now() - this.acData[keyword].create) < expiredTime) {
-            return true;
+    isExpired(keyword) {
+        const elapsedTime = Date.now() - this.acData[keyword].create
+        if(elapsedTime < this.expiredTime) {
+            return false;
         }
-        return false;
+        return true;
     }
 }
 
@@ -310,29 +307,28 @@ class ACResponder {
 		this.acResource = parameter['acResource'];
 		this.acRenderer = parameter['acRenderer'];
 		this.apiURL = parameter['apiURL'];
+        this.keyboardMap = {
+            38: this.acRenderer.pressUpKey.bind(this.acRenderer),
+            40: this.acRenderer.pressDownKey.bind(this.acRenderer),
+            13: this.acRenderer.pressEnterKey.bind(this.acRenderer)
+        }
 
-        this.domContainer.searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
-        this.domContainer.searchField.addEventListener('input', this.changeSearchText.bind(this));
-        this.domContainer.searchField.addEventListener('focusin', this.clickSearchField.bind(this));
-        this.domContainer.autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
-        this.domContainer.autoCompleteList.addEventListener('click', this.clickItem.bind(this));
+        const searchField = this.domContainer.searchField
+        const autoCompleteList = this.domContainer.autoCompleteList
+        searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
+        searchField.addEventListener('input', this.changeSearchText.bind(this));
+        searchField.addEventListener('focusin', this.clickSearchField.bind(this));
+        autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
+        autoCompleteList.addEventListener('click', this.clickItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
         this.domContainer.recentKeywordList.addEventListener('click', this.clickRemoveButton.bind(this));
 
         this.acRenderer.updateRecentList(this.acResource.recentData)
     }
     checkKeyCode(e) {
-		switch(e.keyCode){
-			case 38: //ArrowUp
-				this.acRenderer.pressUpKey()
-				break;
-			case 40: //ArrowDown
-				this.acRenderer.pressDownKey()
-				break;
-			case 13: //Enter
-				this.acRenderer.pressEnterKey()
-                break;
-		}
+        if(this.keyboardMap[e.keyCode]) {
+            this.keyboardMap[e.keyCode]()
+        }
 	}
     changeSearchText(e) {
 		const keyword = e.target.value;
@@ -340,7 +336,7 @@ class ACResponder {
             this.acRenderer.updateACList()
             return;
         }
-        if(this.acResource.checkValidation(keyword)) {
+        if(this.acResource.acData.hasOwnProperty(keyword) && !this.acResource.isExpired(keyword)) {
             this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
             return
         }
@@ -365,7 +361,10 @@ class ACResponder {
 		this.acRenderer.putSelectedItemToField(item.dataset.name);
 	}
 	clickSearchButton(e) {
-        this.acResource.cacheRecentData(this.domContainer.searchField.value);
+        const key = this.domContainer.searchField.value
+        if(key) {
+            this.acResource.cacheRecentData(key);
+        }
         this.acRenderer.updateRecentList(this.acResource.recentData)
 		this.acRenderer.clearSearchWindow();
 	}
@@ -433,6 +432,7 @@ class ACRenderer {
         }
     }
     pressDownKey() {
+        console.log(this);
         const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             const autoCompleteList = this.domContainer.autoCompleteList;
@@ -449,6 +449,7 @@ class ACRenderer {
         }
     }
     pressEnterKey() {
+        // console.log(this);
         const currHoveredItem = this.domContainer.getHoveredItem();
         if(!currHoveredItem) {
             return;
