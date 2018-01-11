@@ -69,7 +69,7 @@ describe('searchField keydown', function(){
 		evt.keyCode = 40;
 		domContainer.searchField.dispatchEvent(evt);
 
-		assert.equal(domContainer.autoCompleteList.childNodes[1].className, "hover");
+		assert.equal(domContainer.autoCompleteList.childNodes[0].className, "hover");
 	})
 	it('화살표 위로', function() {
 		const evt = new Event('keydown');
