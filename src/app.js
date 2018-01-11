@@ -29,15 +29,19 @@ class ACResource {
     }
     cacheACData(key, value) {
         if (this.acDataLog.length >= this.acDataSize) {
-            const key = this.acDataLog.shift();
-            delete this.acData[key];
+            const firstKey = this.acDataLog.shift();
+            delete this.acData[firstKey];
         }
 
+		const index = this.acDataLog.indexOf(key)
+		if(index !== -1) {
+			this.acDataLog.splice(index, 1)
+		}
         this.acData[key] = {
             result: value,
             create: Date.now()
         }
-        this.acDataLog.push(key);
+		this.acDataLog.push(key);
 
         this.setLocalStorageItem('acData', this.acData);
         this.setLocalStorageItem('acDataLog', this.acDataLog);

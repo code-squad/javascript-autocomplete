@@ -76,46 +76,70 @@ const baseURL = "http://crong.codesquad.kr:8080/ac/";
 const domContainer = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["d" /* DomContainer */]();
 const acResource = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["b" /* ACResource */]();
 const acRenderer = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["a" /* ACRenderer */](domContainer);
-const acResponder = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["c" /* ACResponder */](domContainer, acResource, acRenderer, baseURL);
+const acResponder = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["c" /* ACResponder */]({
+	domContainer: domContainer,
+	acResource: acResource,
+	acRenderer: acRenderer,
+	apiURL: baseURL
+});
+localStorage.clear();
+console.log(localStorage);
 
 describe('ACResource.getData', function(){
 	it('"오징" 검색', function(done) {
-		let word = '오징'
-		var fn = function(result) {
+		const word = '오징'
+		const fn = function(result) {
 			let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
 			assert.deepEqual(result, testResult);
 			done();
 		}
-		acResource.getData(baseURL + word, fn)
+		acResource.getData(baseURL + word).then((data) => {
+			fn(data);
+		})
 	})
 })
 
-describe('ACResource.caching', function(){
+describe('ACResource.cacheACData', function(){
 	it('"오징" 한번 캐싱', function() {
 		let word = '오징'
 		let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
-		acResource.caching(word, testResult[1])
-		assert.deepEqual(acResource.memo, {[word]: testResult[1]})
+		acResource.cacheACData(word, testResult[1])
+		assert.deepEqual(JSON.parse(localStorage.getItem('acData'))[word].result, testResult[1])
 	})
 	it('"된장" 두번 캐싱', function() {
 		let word = '된장'
 		let word2 = '된장'
-		acResource.caching(word, [0, 0])
-		acResource.caching(word2, [0, 0])
+		acResource.cacheACData(word, [0, 0])
+		acResource.cacheACData(word2, [0, 0])
 
-		assert.deepEqual(acResource.memoLog, ['오징', '된장'])
+		assert.deepEqual(JSON.parse(localStorage.getItem('acDataLog')), ['오징', '된장'])
 	})
 })
 
+describe('ACResource.cacheRecentData', function(){
+	it('검색어 "오징어볶음" 캐싱', function(done) {
+		let word = '오징어볶음'
+		acResource.cacheRecentData(word)
+		assert.include(JSON.parse(localStorage.getItem('recentData')), word);
+		done();
+	})
+	it('검색어 "마른오징어" 캐싱', function(done) {
+		let word = '마른오징어'
+		acResource.cacheRecentData(word)
+		assert.include(JSON.parse(localStorage.getItem('recentData')), word);
+		done();
+	})
+})
+
+
 describe('searchField keydown', function(){
 	it('화살표 아래로', function() {
-		domContainer.autoCompleteList.innerHTML += "<li data-name='0'>0</li>"
+		domContainer.autoCompleteList.innerHTML = "<li data-name='0'>0</li>"
 		domContainer.autoCompleteList.innerHTML += "<li data-name='1'>1</li>"
 		domContainer.autoCompleteList.innerHTML += "<li data-name='2'>2</li>"
 
 		const evt = new Event('keydown');
 		evt.keyCode = 40;
-		domContainer.searchField.dispatchEvent(evt);
 		domContainer.searchField.dispatchEvent(evt);
 
 		assert.equal(domContainer.autoCompleteList.childNodes[1].className, "hover");
@@ -148,7 +172,6 @@ describe('searchField input', function() {
 		domContainer.searchField.value = "오징";
 		domContainer.searchField.dispatchEvent(evt);
 
-		console.log(domContainer.autoCompleteList.childNodes);
 		assert.equal(domContainer.autoCompleteList.childNodes.length, 9);
 	})
 })
@@ -185,7 +208,6 @@ describe('searchButton click', function() {
 		assert.equal(domContainer.searchField.value, "");
 	})
 })
-
 
 /***/ }),
 /* 1 */
@@ -227,15 +249,19 @@ class ACResource {
     }
     cacheACData(key, value) {
         if (this.acDataLog.length >= this.acDataSize) {
-            const key = this.acDataLog.shift();
-            delete this.acData[key];
+            const firstKey = this.acDataLog.shift();
+            delete this.acData[firstKey];
         }
 
+		const index = this.acDataLog.indexOf(key)
+		if(index !== -1) {
+			this.acDataLog.splice(index, 1)
+		}
         this.acData[key] = {
             result: value,
             create: Date.now()
         }
-        this.acDataLog.push(key);
+		this.acDataLog.push(key);
 
         this.setLocalStorageItem('acData', this.acData);
         this.setLocalStorageItem('acDataLog', this.acDataLog);
