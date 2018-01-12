@@ -320,7 +320,9 @@ class ACResponder {
 		searchField.addEventListener('focusout', this.focusOutSearchField.bind(this));
         autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
         autoCompleteList.addEventListener('click', this.clickItem.bind(this));
+        autoCompleteList.addEventListener('mousedown', this.mouseDownItem.bind(this));
 		recentKeywordList.addEventListener('click', this.clickItem.bind(this));
+		recentKeywordList.addEventListener('mousedown', this.mouseDownItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
         this.acRenderer.updateRecentList(this.acResource.recentData)
     }
@@ -360,29 +362,37 @@ class ACResponder {
         this.acRenderer.changeHoveredItem(item)
 	}
 	clickItem(e) {
+		this.acRenderer.isMouseDown = false;
 		const item = e.target;
 		if(!item || (item.nodeName !== 'LI' && item.nodeName !== "IMG")) {
 			return;
 		}
 		if (item.nodeName === 'LI') {
 			this.acRenderer.putSelectedItemToField(item.dataset.name);
+			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
+			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
 		}
 		if (item.nodeName === 'IMG') {
 			const parent = item.parentNode.parentNode;
 			const index = Array.from(parent.children).indexOf(item.parentNode);
 			this.acResource.removeRecentItem(index)
 			this.acRenderer.updateRecentList(this.acResource.recentData)
+			this.domContainer.searchField.focus();
 		}
+	}
+	mouseDownItem(e) {
+		this.acRenderer.isMouseDown = true;
 	}
 	clickSearchButton(e) {
         const key = this.domContainer.searchField.value
-        if(key) {
+        if(key.trim()) {
             this.acResource.cacheRecentData(key);
         }
         this.acRenderer.updateRecentList(this.acResource.recentData)
 		this.acRenderer.clearSearchWindow();
 	}
     focusInSearchField(e) {
+		this.acRenderer.isMouseDown = false;
     	if (this.domContainer.searchField.value) {
 			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
 			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, true);
@@ -391,14 +401,14 @@ class ACResponder {
 		this.acRenderer.setDisplay(this.domContainer.recentKeywordList, true);
     }
 	focusOutSearchField(e) {
-		setTimeout(function(){
-			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
-			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
-			if (this.acRenderer.hoveredItem) {
-				this.acRenderer.hoveredItem.classList.remove('hover');
-				this.acRenderer.hoveredItem = "";
-			}
-		}.bind(this), 150);
+    	if (this.acRenderer.isMouseDown) return;
+
+		this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
+		this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
+		if (this.acRenderer.hoveredItem) {
+			this.acRenderer.hoveredItem.classList.remove('hover');
+			this.acRenderer.hoveredItem = "";
+		}
 	}
 }
 
@@ -406,6 +416,7 @@ class ACRenderer {
     constructor(domContainer) {
         this.domContainer = domContainer
         this.hoveredItem = ""
+		this.isMouseDown = false
     }
     updateACList(keyword, autoComplete) {
 		const autoCompleteList = this.domContainer.autoCompleteList;
