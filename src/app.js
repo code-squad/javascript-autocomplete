@@ -1,10 +1,12 @@
 class DomContainer {
     constructor() {
-        this.searchBar = document.querySelector('.search-bar');
         this.searchButton = document.querySelector('.search-button');
         this.searchField = document.querySelector('#search-field');
         this.autoCompleteList = document.querySelector('.auto-complete-list');
-        this.recentKeywordList = document.querySelector('.recent-keyword-list')
+        this.recentKeywordList = document.querySelector('.recent-keyword-list');
+        this.slidingMenuList = document.querySelector('.sliding-menu-list');
+        this.slidingLeftArrow = document.querySelector('.sliding-left-arrow');
+        this.slidingRightArrow = document.querySelector('.sliding-right-arrow');
     }
 }
 
@@ -94,6 +96,7 @@ class ACResponder {
         const searchField = this.domContainer.searchField
         const autoCompleteList = this.domContainer.autoCompleteList
 		const recentKeywordList = this.domContainer.recentKeywordList
+
         searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
         searchField.addEventListener('input', this.changeSearchText.bind(this));
         searchField.addEventListener('focusin', this.focusInSearchField.bind(this));
@@ -103,8 +106,13 @@ class ACResponder {
         autoCompleteList.addEventListener('mousedown', this.mouseDownItem.bind(this));
 		recentKeywordList.addEventListener('click', this.clickItem.bind(this));
 		recentKeywordList.addEventListener('mousedown', this.mouseDownItem.bind(this));
+
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
         this.acRenderer.updateRecentList(this.acResource.recentData)
+
+		this.domContainer.slidingLeftArrow.addEventListener('click', this.startLeftSliding.bind(this));
+		this.domContainer.slidingRightArrow.addEventListener('click', this.startRightSliding.bind(this));
+        this.domContainer.slidingMenuList.addEventListener('transitionend', this.endSliding.bind(this));
     }
     checkKeyCode(e) {
         if(this.keyboardMap[e.keyCode]) {
@@ -189,6 +197,32 @@ class ACResponder {
 			this.acRenderer.hoveredItem.classList.remove('hover');
 			this.acRenderer.hoveredItem = "";
 		}
+	}
+	startLeftSliding(e) {
+		this.domContainer.slidingMenuList.classList.add('slided-left');
+	}
+	startRightSliding(e) {
+		this.domContainer.slidingMenuList.classList.add('slided-right');
+	}
+	endSliding(e) {
+		const slidingMenuList = this.domContainer.slidingMenuList;
+		if (slidingMenuList.classList.contains('slided-left')) {
+			this.endLeftSliding();
+		} else {
+			this.endRightSliding();
+		}
+	}
+	endLeftSliding() {
+		const slidingMenuList = this.domContainer.slidingMenuList;
+		slidingMenuList.classList.remove('slided-left');
+		const lastItem = slidingMenuList.removeChild(slidingMenuList.lastElementChild);
+		slidingMenuList.insertBefore(lastItem, slidingMenuList.firstElementChild);
+	}
+	endRightSliding() {
+		const slidingMenuList = this.domContainer.slidingMenuList;
+		slidingMenuList.classList.remove('slided-right');
+		const firstItem = slidingMenuList.removeChild(slidingMenuList.firstElementChild);
+		slidingMenuList.appendChild(firstItem);
 	}
 }
 
