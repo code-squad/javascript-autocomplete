@@ -93,15 +93,15 @@ class ACResponder {
 
         const searchField = this.domContainer.searchField
         const autoCompleteList = this.domContainer.autoCompleteList
+		const recentKeywordList = this.domContainer.recentKeywordList
         searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
         searchField.addEventListener('input', this.changeSearchText.bind(this));
         searchField.addEventListener('focusin', this.focusInSearchField.bind(this));
 		searchField.addEventListener('focusout', this.focusOutSearchField.bind(this));
         autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
         autoCompleteList.addEventListener('click', this.clickItem.bind(this));
+		recentKeywordList.addEventListener('click', this.clickItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
-        this.domContainer.recentKeywordList.addEventListener('click', this.clickRemoveButton.bind(this));
-
         this.acRenderer.updateRecentList(this.acResource.recentData)
     }
     checkKeyCode(e) {
@@ -141,10 +141,18 @@ class ACResponder {
 	}
 	clickItem(e) {
 		const item = e.target;
-		if(!item || item.nodeName !== 'LI') {
+		if(!item || (item.nodeName !== 'LI' && item.nodeName !== "IMG")) {
 			return;
 		}
-		this.acRenderer.putSelectedItemToField(item.dataset.name);
+		if (item.nodeName === 'LI') {
+			this.acRenderer.putSelectedItemToField(item.dataset.name);
+		}
+		if (item.nodeName === 'IMG') {
+			const parent = item.parentNode.parentNode;
+			const index = Array.from(parent.children).indexOf(item.parentNode);
+			this.acResource.removeRecentItem(index)
+			this.acRenderer.updateRecentList(this.acResource.recentData)
+		}
 	}
 	clickSearchButton(e) {
         const key = this.domContainer.searchField.value
@@ -170,18 +178,8 @@ class ACResponder {
 				this.acRenderer.hoveredItem.classList.remove('hover');
 				this.acRenderer.hoveredItem = "";
 			}
-		}.bind(this), 100);
+		}.bind(this), 150);
 	}
-    clickRemoveButton(e) {
-        const target = e.target;
-        if(!target || target.nodeName !== "IMG") {
-            return;
-        }
-        const parent = target.parentNode.parentNode;
-        const index = Array.from(parent.children).indexOf(target.parentNode);
-        this.acResource.removeRecentItem(index)
-        this.acRenderer.updateRecentList(this.acResource.recentData)
-    }
 }
 
 class ACRenderer {
@@ -208,7 +206,7 @@ class ACRenderer {
     updateRecentList(recentData) {
         let listDomHTML = "";
         recentData.forEach((data) => {
-            const dataHTML = `<li>${data}<img></li>`
+            const dataHTML = `<li data-name='${data}'>${data}<img></li>`
             listDomHTML += dataHTML
         })
         this.domContainer.recentKeywordList.innerHTML = listDomHTML
