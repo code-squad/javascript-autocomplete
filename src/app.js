@@ -1,5 +1,6 @@
 class DomContainer {
     constructor() {
+        this.searchBar = document.querySelector('.search-bar');
         this.searchButton = document.querySelector('.search-button');
         this.searchField = document.querySelector('#search-field');
         this.autoCompleteList = document.querySelector('.auto-complete-list');
@@ -94,7 +95,8 @@ class ACResponder {
         const autoCompleteList = this.domContainer.autoCompleteList
         searchField.addEventListener('keydown', this.checkKeyCode.bind(this));
         searchField.addEventListener('input', this.changeSearchText.bind(this));
-        searchField.addEventListener('focusin', this.clickSearchField.bind(this));
+        searchField.addEventListener('focusin', this.focusInSearchField.bind(this));
+		searchField.addEventListener('focusout', this.focusOutSearchField.bind(this));
         autoCompleteList.addEventListener('mouseover', this.mouseOver.bind(this));
         autoCompleteList.addEventListener('click', this.clickItem.bind(this));
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
@@ -109,10 +111,17 @@ class ACResponder {
 	}
     changeSearchText(e) {
 		const keyword = e.target.value;
+		const recentKeywordList = this.domContainer.recentKeywordList;
+		const autoCompleteList = this.domContainer.autoCompleteList;
         if(!keyword) {
             this.acRenderer.updateACList()
+			this.acRenderer.setDisplay(recentKeywordList, true);
+			this.acRenderer.setDisplay(autoCompleteList, false);
             return;
         }
+		this.acRenderer.setDisplay(recentKeywordList, false);
+		this.acRenderer.setDisplay(autoCompleteList, true);
+
         if(this.acResource.acData.hasOwnProperty(keyword) && !this.acResource.isExpired(keyword)) {
             this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
             return
@@ -145,9 +154,24 @@ class ACResponder {
         this.acRenderer.updateRecentList(this.acResource.recentData)
 		this.acRenderer.clearSearchWindow();
 	}
-    clickSearchField(e) {
-        this.domContainer.recentKeywordList.style.display = "block";
+    focusInSearchField(e) {
+    	if (this.domContainer.searchField.value) {
+			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
+			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, true);
+        	return;
+		}
+		this.acRenderer.setDisplay(this.domContainer.recentKeywordList, true);
     }
+	focusOutSearchField(e) {
+		setTimeout(function(){
+			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
+			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
+			if (this.acRenderer.hoveredItem) {
+				this.acRenderer.hoveredItem.classList.remove('hover');
+				this.acRenderer.hoveredItem = "";
+			}
+		}.bind(this), 100);
+	}
     clickRemoveButton(e) {
         const target = e.target;
         if(!target || target.nodeName !== "IMG") {
@@ -166,15 +190,10 @@ class ACRenderer {
         this.hoveredItem = ""
     }
     updateACList(keyword, autoComplete) {
-		const listDom = this.domContainer.autoCompleteList;
-        const recentKeywordList = this.domContainer.recentKeywordList
-        if(!keyword) {
-            recentKeywordList.style.display = "block";
-        } else {
-            recentKeywordList.style.display = "none";
-        }
+		const autoCompleteList = this.domContainer.autoCompleteList;
 		if(!autoComplete) {
-			listDom.innerHTML = ""
+			autoCompleteList.innerHTML = ""
+			this.hoveredItem = "";
 			return false
 		}
 		let listDomHTML = "";
@@ -184,7 +203,7 @@ class ACRenderer {
 			listDomHTML += itemDom;
 		});
 
-		listDom.innerHTML = listDomHTML;
+		autoCompleteList.innerHTML = listDomHTML;
 	}
     updateRecentList(recentData) {
         let listDomHTML = "";
@@ -231,7 +250,6 @@ class ACRenderer {
         if(!this.hoveredItem) {
             return;
         }
-
         this.putSelectedItemToField(this.hoveredItem.dataset.name);
     }
     changeHoveredItem(item) {
@@ -244,9 +262,12 @@ class ACRenderer {
     putSelectedItemToField(word) {
         const searchField = this.domContainer.searchField;
         searchField.value = word;
-
         this.domContainer.autoCompleteList.innerHTML = '';
+        this.hoveredItem = "";
     }
+    setDisplay(dom, isShow) {
+		dom.style.display = (isShow) ? 'block' : 'none';
+	}
 }
 
 document.addEventListener('DOMContentLoaded', function () {
