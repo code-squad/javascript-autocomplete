@@ -358,4 +358,4 @@ document.addEventListener('DOMContentLoaded', function () {
 		renderer: isRenderer
 	});
 });
-export {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer}
+export {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer, InfiniteSlidingRenderer, InfiniteSlidingResponder}

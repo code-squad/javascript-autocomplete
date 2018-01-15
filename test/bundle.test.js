@@ -82,6 +82,12 @@ const acResponder = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["c" /* AutoCom
 	renderer: acRenderer,
 	apiURL: baseURL
 });
+const isRenderer = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["e" /* InfiniteSlidingRenderer */](domContainer);
+const isResponder = new __WEBPACK_IMPORTED_MODULE_0__src_app_js__["f" /* InfiniteSlidingResponder */]({
+    domContainer: domContainer,
+    renderer: isRenderer
+});
+
 localStorage.clear();
 
 describe('AutoCompleteResource.getData', function(){
@@ -208,6 +214,51 @@ describe('searchButton click', function() {
 	})
 })
 
+describe('infiniteSliding button click', function () {
+    it('왼쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingLeftArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-left');
+        domContainer.slidingMenuList.classList.remove('slided-left');
+    });
+
+    it('오른쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingRightArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-right');
+        domContainer.slidingMenuList.classList.remove('slided-right');
+    });
+
+    it('왼쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-left');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const last = slidingMenuList.lastElementChild;
+
+        const evt = new Event('transitionend');
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const first = slidingMenuList.firstElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-left');
+        assert.equal(first, last);
+    });
+
+    it('오른쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-right');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const evt = new Event('transitionend');
+        const first = slidingMenuList.firstElementChild;
+
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const last = slidingMenuList.lastElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-right');
+        assert.equal(first, last);
+    });
+})
+
+
 
 /***/ }),
 /* 1 */
@@ -218,6 +269,8 @@ describe('searchButton click', function() {
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return AutoCompleteResource; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return AutoCompleteResponder; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return AutoCompleteRenderer; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "e", function() { return InfiniteSlidingRenderer; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "f", function() { return InfiniteSlidingResponder; });
 class DomContainer {
     constructor() {
         this.searchButton = document.querySelector('.search-button');

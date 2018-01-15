@@ -1,5 +1,5 @@
 const assert = chai.assert;
-import {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer} from '../src/app.js'
+import {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer, InfiniteSlidingRenderer, InfiniteSlidingResponder} from '../src/app.js'
 const baseURL = "http://crong.codesquad.kr:8080/ac/";
 const domContainer = new DomContainer();
 const acResource = new AutoCompleteResource();
@@ -10,6 +10,12 @@ const acResponder = new AutoCompleteResponder({
 	renderer: acRenderer,
 	apiURL: baseURL
 });
+const isRenderer = new InfiniteSlidingRenderer(domContainer);
+const isResponder = new InfiniteSlidingResponder({
+    domContainer: domContainer,
+    renderer: isRenderer
+});
+
 localStorage.clear();
 
 describe('AutoCompleteResource.getData', function(){
@@ -135,3 +141,48 @@ describe('searchButton click', function() {
 		assert.equal(domContainer.searchField.value, "");
 	})
 })
+
+describe('infiniteSliding button click', function () {
+    it('왼쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingLeftArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-left');
+        domContainer.slidingMenuList.classList.remove('slided-left');
+    });
+
+    it('오른쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingRightArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-right');
+        domContainer.slidingMenuList.classList.remove('slided-right');
+    });
+
+    it('왼쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-left');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const last = slidingMenuList.lastElementChild;
+
+        const evt = new Event('transitionend');
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const first = slidingMenuList.firstElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-left');
+        assert.equal(first, last);
+    });
+
+    it('오른쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-right');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const evt = new Event('transitionend');
+        const first = slidingMenuList.firstElementChild;
+
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const last = slidingMenuList.lastElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-right');
+        assert.equal(first, last);
+    });
+})
+
