@@ -10,11 +10,11 @@ class DomContainer {
     }
 }
 
-class ACResource {
+class AutoCompleteResource {
     constructor() {
-        this.acData = this.getLocalStorageItem('acData', {});
-        this.acDataLog = this.getLocalStorageItem('acDataLog', []);
-        this.acDataSize = 100;
+        this.data = this.getLocalStorageItem('data', {});
+        this.dataLog = this.getLocalStorageItem('dataLog', []);
+        this.dataSize = 100;
         this.recentData = this.getLocalStorageItem('recentData', []);
         this.recentDataSize = 5;
         this.expiredTime = 6 * 60 * 60 * 1000
@@ -29,23 +29,23 @@ class ACResource {
         })
     }
     cacheACData(key, value) {
-        if (this.acDataLog.length >= this.acDataSize) {
-            const firstKey = this.acDataLog.shift();
-            delete this.acData[firstKey];
+        if (this.dataLog.length >= this.dataSize) {
+            const firstKey = this.dataLog.shift();
+            delete this.data[firstKey];
         }
 
-		const index = this.acDataLog.indexOf(key)
+		const index = this.dataLog.indexOf(key)
 		if(index !== -1) {
-			this.acDataLog.splice(index, 1)
+			this.dataLog.splice(index, 1)
 		}
-        this.acData[key] = {
+        this.data[key] = {
             result: value,
             create: Date.now()
         }
-		this.acDataLog.push(key);
+		this.dataLog.push(key);
 
-        this.setLocalStorageItem('acData', this.acData);
-        this.setLocalStorageItem('acDataLog', this.acDataLog);
+        this.setLocalStorageItem('data', this.data);
+        this.setLocalStorageItem('dataLog', this.dataLog);
     }
     cacheRecentData(key) {
         const index = this.recentData.indexOf(key)
@@ -73,7 +73,7 @@ class ACResource {
         this.setLocalStorageItem('recentData', this.recentData);
     }
     isExpired(keyword) {
-        const elapsedTime = Date.now() - this.acData[keyword].create
+        const elapsedTime = Date.now() - this.data[keyword].create
         if(elapsedTime < this.expiredTime) {
             return false;
         }
@@ -81,16 +81,104 @@ class ACResource {
     }
 }
 
-class ACResponder {
+
+class AutoCompleteRenderer {
+	constructor(domContainer) {
+		this.domContainer = domContainer
+		this.hoveredItem = ""
+		this.isMouseDown = false
+	}
+	updateACList(keyword, autoComplete) {
+		const autoCompleteList = this.domContainer.autoCompleteList;
+		if(!autoComplete) {
+			autoCompleteList.innerHTML = ""
+			this.hoveredItem = "";
+			return false
+		}
+		let listDomHTML = "";
+		autoComplete.forEach((item) => {
+			const itemHTML = item[0].replace(keyword, `<span>${keyword}</span>`);
+			const itemDom = `<li data-name='${item[0]}'>${itemHTML}</li>`;
+			listDomHTML += itemDom;
+		});
+
+		autoCompleteList.innerHTML = listDomHTML;
+	}
+	updateRecentList(recentData) {
+		let listDomHTML = "";
+		recentData.forEach((data) => {
+			const dataHTML = `<li data-name='${data}'>${data}<img></li>`
+			listDomHTML += dataHTML
+		})
+		this.domContainer.recentKeywordList.innerHTML = listDomHTML
+	}
+	clearSearchWindow() {
+		this.domContainer.autoCompleteList.innerHTML = "";
+		this.domContainer.searchField.value = "";
+	}
+	pressUpKey() {
+		if(!this.hoveredItem) {
+			return;
+		}
+
+		const previousSibling = this.hoveredItem.previousElementSibling;
+		if(previousSibling) {
+			previousSibling.classList.add('hover');
+			this.hoveredItem.classList.remove('hover');
+			this.hoveredItem = previousSibling
+		}
+	}
+	pressDownKey() {
+		if(!this.hoveredItem) {
+			const autoCompleteList = this.domContainer.autoCompleteList;
+			if(autoCompleteList.childNodes) {
+				autoCompleteList.childNodes[0].classList.add('hover')
+				this.hoveredItem = autoCompleteList.childNodes[0]
+			}
+			return;
+		}
+
+		const nextSibling = this.hoveredItem.nextElementSibling;
+		if(nextSibling) {
+			nextSibling.classList.add('hover');
+			this.hoveredItem.classList.remove('hover');
+			this.hoveredItem = nextSibling
+		}
+	}
+	pressEnterKey() {
+		if(!this.hoveredItem) {
+			return;
+		}
+		this.putSelectedItemToField(this.hoveredItem.dataset.name);
+	}
+	changeHoveredItem(item) {
+		if(this.hoveredItem) {
+			this.hoveredItem.classList.remove('hover');
+		}
+		item.classList.add('hover');
+		this.hoveredItem = item
+	}
+	putSelectedItemToField(word) {
+		const searchField = this.domContainer.searchField;
+		searchField.value = word;
+		this.domContainer.autoCompleteList.innerHTML = '';
+		this.hoveredItem = "";
+	}
+	setDisplay(dom, isShow) {
+		dom.style.display = (isShow) ? 'block' : 'none';
+	}
+}
+
+class AutoCompleteResponder {
     constructor(parameter) {
 		this.domContainer = parameter['domContainer'];
-		this.acResource = parameter['acResource'];
-		this.acRenderer = parameter['acRenderer'];
+		this.resource = parameter['resource'];
+		this.renderer = parameter['renderer'];
 		this.apiURL = parameter['apiURL'];
         this.keyboardMap = {
-            38: this.acRenderer.pressUpKey.bind(this.acRenderer),
-            40: this.acRenderer.pressDownKey.bind(this.acRenderer),
-            13: this.acRenderer.pressEnterKey.bind(this.acRenderer)
+            38: this.renderer.pressUpKey.bind(this.renderer),
+            40: this.renderer.pressDownKey.bind(this.renderer),
+            13: this.renderer.pressEnterKey.bind(this.renderer)
         }
 
         const searchField = this.domContainer.searchField
@@ -108,11 +196,7 @@ class ACResponder {
 		recentKeywordList.addEventListener('mousedown', this.mouseDownItem.bind(this));
 
         this.domContainer.searchButton.addEventListener('click', this.clickSearchButton.bind(this));
-        this.acRenderer.updateRecentList(this.acResource.recentData)
-
-		this.domContainer.slidingLeftArrow.addEventListener('click', this.startLeftSliding.bind(this));
-		this.domContainer.slidingRightArrow.addEventListener('click', this.startRightSliding.bind(this));
-        this.domContainer.slidingMenuList.addEventListener('transitionend', this.endSliding.bind(this));
+        this.renderer.updateRecentList(this.resource.recentData)
     }
     checkKeyCode(e) {
         if(this.keyboardMap[e.keyCode]) {
@@ -124,22 +208,22 @@ class ACResponder {
 		const recentKeywordList = this.domContainer.recentKeywordList;
 		const autoCompleteList = this.domContainer.autoCompleteList;
         if(!keyword) {
-            this.acRenderer.updateACList()
-			this.acRenderer.setDisplay(recentKeywordList, true);
-			this.acRenderer.setDisplay(autoCompleteList, false);
+            this.renderer.updateACList()
+			this.renderer.setDisplay(recentKeywordList, true);
+			this.renderer.setDisplay(autoCompleteList, false);
             return;
         }
-		this.acRenderer.setDisplay(recentKeywordList, false);
-		this.acRenderer.setDisplay(autoCompleteList, true);
+		this.renderer.setDisplay(recentKeywordList, false);
+		this.renderer.setDisplay(autoCompleteList, true);
 
-        if(this.acResource.acData.hasOwnProperty(keyword) && !this.acResource.isExpired(keyword)) {
-            this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
+        if(this.resource.data.hasOwnProperty(keyword) && !this.resource.isExpired(keyword)) {
+            this.renderer.updateACList(keyword, this.resource.data[keyword].result);
             return
         }
 		const url = this.apiURL + keyword;
-		this.acResource.getData(url).then((data) => {
-            this.acResource.cacheACData(keyword, data[1]);
-    		this.acRenderer.updateACList(keyword, this.acResource.acData[keyword].result);
+		this.resource.getData(url).then((data) => {
+            this.resource.cacheACData(keyword, data[1]);
+    		this.renderer.updateACList(keyword, this.resource.data[keyword].result);
         })
 	}
     mouseOver(e) {
@@ -147,78 +231,76 @@ class ACResponder {
 		if(!item || item.nodeName !== 'LI') {
 			return;
 		}
-        this.acRenderer.changeHoveredItem(item)
+        this.renderer.changeHoveredItem(item)
 	}
 	clickItem(e) {
-		this.acRenderer.isMouseDown = false;
+		this.renderer.isMouseDown = false;
 		const item = e.target;
 		if(!item || (item.nodeName !== 'LI' && item.nodeName !== "IMG")) {
 			return;
 		}
 		if (item.nodeName === 'LI') {
-			this.acRenderer.putSelectedItemToField(item.dataset.name);
-			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
-			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
+			this.renderer.putSelectedItemToField(item.dataset.name);
+			this.renderer.setDisplay(this.domContainer.recentKeywordList, false);
+			this.renderer.setDisplay(this.domContainer.autoCompleteList, false);
 		}
 		if (item.nodeName === 'IMG') {
 			const parent = item.parentNode.parentNode;
 			const index = Array.from(parent.children).indexOf(item.parentNode);
-			this.acResource.removeRecentItem(index)
-			this.acRenderer.updateRecentList(this.acResource.recentData)
+			this.resource.removeRecentItem(index)
+			this.renderer.updateRecentList(this.resource.recentData)
 			this.domContainer.searchField.focus();
 		}
 	}
 	mouseDownItem(e) {
-		this.acRenderer.isMouseDown = true;
+		this.renderer.isMouseDown = true;
 	}
 	clickSearchButton(e) {
         const key = this.domContainer.searchField.value
         if(key.trim()) {
-            this.acResource.cacheRecentData(key);
+            this.resource.cacheRecentData(key);
         }
-        this.acRenderer.updateRecentList(this.acResource.recentData)
-		this.acRenderer.clearSearchWindow();
+        this.renderer.updateRecentList(this.resource.recentData)
+		this.renderer.clearSearchWindow();
 	}
     focusInSearchField(e) {
-		this.acRenderer.isMouseDown = false;
+		this.renderer.isMouseDown = false;
     	if (this.domContainer.searchField.value) {
-			this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
-			this.acRenderer.setDisplay(this.domContainer.autoCompleteList, true);
+			this.renderer.setDisplay(this.domContainer.recentKeywordList, false);
+			this.renderer.setDisplay(this.domContainer.autoCompleteList, true);
         	return;
 		}
-		this.acRenderer.setDisplay(this.domContainer.recentKeywordList, true);
+		this.renderer.setDisplay(this.domContainer.recentKeywordList, true);
     }
 	focusOutSearchField(e) {
-    	if (this.acRenderer.isMouseDown) return;
+    	if (this.renderer.isMouseDown) return;
 
-		this.acRenderer.setDisplay(this.domContainer.recentKeywordList, false);
-		this.acRenderer.setDisplay(this.domContainer.autoCompleteList, false);
-		if (this.acRenderer.hoveredItem) {
-			this.acRenderer.hoveredItem.classList.remove('hover');
-			this.acRenderer.hoveredItem = "";
+		this.renderer.setDisplay(this.domContainer.recentKeywordList, false);
+		this.renderer.setDisplay(this.domContainer.autoCompleteList, false);
+		if (this.renderer.hoveredItem) {
+			this.renderer.hoveredItem.classList.remove('hover');
+			this.renderer.hoveredItem = "";
 		}
 	}
-	startLeftSliding(e) {
+}
+
+class InfiniteSlidingRenderer {
+	constructor(domContainer) {
+		this.domContainer = domContainer
+	}
+	onLeftSliding() {
 		this.domContainer.slidingMenuList.classList.add('slided-left');
 	}
-	startRightSliding(e) {
+	onRightSliding() {
 		this.domContainer.slidingMenuList.classList.add('slided-right');
 	}
-	endSliding(e) {
-		const slidingMenuList = this.domContainer.slidingMenuList;
-		if (slidingMenuList.classList.contains('slided-left')) {
-			this.endLeftSliding();
-		} else {
-			this.endRightSliding();
-		}
-	}
-	endLeftSliding() {
+	resetLeftSliding() {
 		const slidingMenuList = this.domContainer.slidingMenuList;
 		slidingMenuList.classList.remove('slided-left');
 		const lastItem = slidingMenuList.removeChild(slidingMenuList.lastElementChild);
 		slidingMenuList.insertBefore(lastItem, slidingMenuList.firstElementChild);
 	}
-	endRightSliding() {
+	resetRightSliding() {
 		const slidingMenuList = this.domContainer.slidingMenuList;
 		slidingMenuList.classList.remove('slided-right');
 		const firstItem = slidingMenuList.removeChild(slidingMenuList.firstElementChild);
@@ -226,103 +308,47 @@ class ACResponder {
 	}
 }
 
-class ACRenderer {
-    constructor(domContainer) {
-        this.domContainer = domContainer
-        this.hoveredItem = ""
-		this.isMouseDown = false
-    }
-    updateACList(keyword, autoComplete) {
-		const autoCompleteList = this.domContainer.autoCompleteList;
-		if(!autoComplete) {
-			autoCompleteList.innerHTML = ""
-			this.hoveredItem = "";
-			return false
-		}
-		let listDomHTML = "";
-		autoComplete.forEach((item) => {
-			const itemHTML = item[0].replace(keyword, `<span>${keyword}</span>`);
-			const itemDom = `<li data-name='${item[0]}'>${itemHTML}</li>`;
-			listDomHTML += itemDom;
-		});
+class InfiniteSlidingResponder {
+	constructor(parameter) {
+		this.domContainer = parameter['domContainer'];
+		this.renderer = parameter['renderer'];
 
-		autoCompleteList.innerHTML = listDomHTML;
+		this.domContainer.slidingLeftArrow.addEventListener('click', this.startLeftSliding.bind(this));
+		this.domContainer.slidingRightArrow.addEventListener('click', this.startRightSliding.bind(this));
+		this.domContainer.slidingMenuList.addEventListener('transitionend', this.endSliding.bind(this));
 	}
-    updateRecentList(recentData) {
-        let listDomHTML = "";
-        recentData.forEach((data) => {
-            const dataHTML = `<li data-name='${data}'>${data}<img></li>`
-            listDomHTML += dataHTML
-        })
-        this.domContainer.recentKeywordList.innerHTML = listDomHTML
-    }
-    clearSearchWindow() {
-		this.domContainer.autoCompleteList.innerHTML = "";
-		this.domContainer.searchField.value = "";
+	startLeftSliding(e) {
+		this.renderer.onLeftSliding();
 	}
-    pressUpKey() {
-        if(!this.hoveredItem) {
-            return;
-        }
-
-		const previousSibling = this.hoveredItem.previousElementSibling;
-        if(previousSibling) {
-			previousSibling.classList.add('hover');
-            this.hoveredItem.classList.remove('hover');
-            this.hoveredItem = previousSibling
-        }
-    }
-    pressDownKey() {
-        if(!this.hoveredItem) {
-            const autoCompleteList = this.domContainer.autoCompleteList;
-            if(autoCompleteList.childNodes) {
-                autoCompleteList.childNodes[0].classList.add('hover')
-                this.hoveredItem = autoCompleteList.childNodes[0]
-            }
-            return;
-        }
-
-		const nextSibling = this.hoveredItem.nextElementSibling;
-        if(nextSibling) {
-			nextSibling.classList.add('hover');
-            this.hoveredItem.classList.remove('hover');
-            this.hoveredItem = nextSibling
-        }
-    }
-    pressEnterKey() {
-        if(!this.hoveredItem) {
-            return;
-        }
-        this.putSelectedItemToField(this.hoveredItem.dataset.name);
-    }
-    changeHoveredItem(item) {
-		if(this.hoveredItem) {
-			this.hoveredItem.classList.remove('hover');
+	startRightSliding(e) {
+		this.renderer.onRightSliding();
+	}
+	endSliding(e) {
+		const slidingMenuList = this.domContainer.slidingMenuList;
+		if (slidingMenuList.classList.contains('slided-left')) {
+			this.renderer.resetLeftSliding();
+		} else {
+			this.renderer.resetRightSliding();
 		}
-		item.classList.add('hover');
-        this.hoveredItem = item
-    }
-    putSelectedItemToField(word) {
-        const searchField = this.domContainer.searchField;
-        searchField.value = word;
-        this.domContainer.autoCompleteList.innerHTML = '';
-        this.hoveredItem = "";
-    }
-    setDisplay(dom, isShow) {
-		dom.style.display = (isShow) ? 'block' : 'none';
 	}
 }
 
 document.addEventListener('DOMContentLoaded', function () {
 	const baseURL = "http://crong.codesquad.kr:8080/ac/";
     const domContainer = new DomContainer();
-    const acResource = new ACResource();
-    const acRenderer = new ACRenderer(domContainer);
-    const acResponder = new ACResponder({
+    const acResource = new AutoCompleteResource();
+    const acRenderer = new AutoCompleteRenderer(domContainer);
+    const acResponder = new AutoCompleteResponder({
 		domContainer: domContainer,
-		acResource: acResource,
-		acRenderer: acRenderer,
+		resource: acResource,
+		renderer: acRenderer,
 		apiURL: baseURL
 	});
+
+	const isRenderer = new InfiniteSlidingRenderer(domContainer);
+	const isResponder = new InfiniteSlidingResponder({
+		domContainer: domContainer,
+		renderer: isRenderer
+	});
 });
-export {DomContainer, ACResource, ACResponder, ACRenderer}
+export {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer}

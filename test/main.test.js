@@ -1,18 +1,18 @@
 const assert = chai.assert;
-import {DomContainer, ACResource, ACResponder, ACRenderer} from '../src/app.js'
+import {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer} from '../src/app.js'
 const baseURL = "http://crong.codesquad.kr:8080/ac/";
 const domContainer = new DomContainer();
-const acResource = new ACResource();
-const acRenderer = new ACRenderer(domContainer);
-const acResponder = new ACResponder({
+const acResource = new AutoCompleteResource();
+const acRenderer = new AutoCompleteRenderer(domContainer);
+const acResponder = new AutoCompleteResponder({
 	domContainer: domContainer,
-	acResource: acResource,
-	acRenderer: acRenderer,
+	resource: acResource,
+	renderer: acRenderer,
 	apiURL: baseURL
 });
 localStorage.clear();
 
-describe('ACResource.getData', function(){
+describe('AutoCompleteResource.getData', function(){
 	it('"오징" 검색', function(done) {
 		const word = '오징'
 		const fn = function(result) {
@@ -26,12 +26,12 @@ describe('ACResource.getData', function(){
 	})
 })
 
-describe('ACResource.cacheACData', function(){
+describe('AutoCompleteResource.cacheACData', function(){
 	it('"오징" 한번 캐싱', function() {
 		let word = '오징'
 		let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
 		acResource.cacheACData(word, testResult[1])
-		assert.deepEqual(JSON.parse(localStorage.getItem('acData'))[word].result, testResult[1])
+		assert.deepEqual(JSON.parse(localStorage.getItem('data'))[word].result, testResult[1])
 	})
 	it('"된장" 두번 캐싱', function() {
 		let word = '된장'
@@ -39,11 +39,11 @@ describe('ACResource.cacheACData', function(){
 		acResource.cacheACData(word, [0, 0])
 		acResource.cacheACData(word2, [0, 0])
 
-		assert.deepEqual(JSON.parse(localStorage.getItem('acDataLog')), ['오징', '된장'])
+		assert.deepEqual(JSON.parse(localStorage.getItem('dataLog')), ['오징', '된장'])
 	})
 })
 
-describe('ACResource.cacheRecentData', function(){
+describe('AutoCompleteResource.cacheRecentData', function(){
 	it('검색어 "오징어볶음" 캐싱', function(done) {
 		let word = '오징어볶음'
 		acResource.cacheRecentData(word)
