@@ -316,6 +316,7 @@ class InfiniteSlidingResponder {
 		this.domContainer.slidingLeftArrow.addEventListener('click', this.startLeftSliding.bind(this));
 		this.domContainer.slidingRightArrow.addEventListener('click', this.startRightSliding.bind(this));
 		this.domContainer.slidingMenuList.addEventListener('transitionend', this.endSliding.bind(this));
+		this.resetInterval();
 	}
 	startLeftSliding(e) {
 		this.renderer.onLeftSliding();
@@ -330,6 +331,12 @@ class InfiniteSlidingResponder {
 		} else {
 			this.renderer.resetRightSliding();
 		}
+		this.resetInterval();
+	}
+
+	resetInterval() {
+		clearInterval(this.autoInterval);
+		this.autoInterval = setInterval(this.startRightSliding.bind(this), 2000);
 	}
 }
 
