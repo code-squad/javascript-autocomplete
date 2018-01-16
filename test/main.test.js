@@ -1,52 +1,81 @@
 const assert = chai.assert;
-import {DomContainer, ACResource, ACResponder, ACRenderer} from '../src/app.js'
+import {DomContainer, AutoCompleteResource, AutoCompleteResponder, AutoCompleteRenderer, InfiniteSlidingRenderer, InfiniteSlidingResponder} from '../src/app.js'
 const baseURL = "http://crong.codesquad.kr:8080/ac/";
 const domContainer = new DomContainer();
-const acResource = new ACResource();
-const acRenderer = new ACRenderer(domContainer);
-const acResponder = new ACResponder(domContainer, acResource, acRenderer, baseURL);
+const acResource = new AutoCompleteResource();
+const acRenderer = new AutoCompleteRenderer(domContainer);
+const acResponder = new AutoCompleteResponder({
+	domContainer: domContainer,
+	resource: acResource,
+	renderer: acRenderer,
+	apiURL: baseURL
+});
+const isRenderer = new InfiniteSlidingRenderer(domContainer);
+const isResponder = new InfiniteSlidingResponder({
+    domContainer: domContainer,
+    renderer: isRenderer
+});
 
-describe('ACResource.getData', function(){
+localStorage.clear();
+
+describe('AutoCompleteResource.getData', function(){
 	it('"오징" 검색', function(done) {
-		let word = '오징'
-		var fn = function(result) {
+		const word = '오징'
+		const fn = function(result) {
 			let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
 			assert.deepEqual(result, testResult);
 			done();
 		}
-		acResource.getData(baseURL + word, fn)
+		acResource.getData(baseURL + word).then((data) => {
+			fn(data);
+		})
 	})
 })
 
-describe('ACResource.caching', function(){
+describe('AutoCompleteResource.cacheACData', function(){
 	it('"오징" 한번 캐싱', function() {
 		let word = '오징'
 		let testResult = ['오징',[['오징어볶음'], ['마른오징어'], ['오징어무국'], ['반건조오징어'], ['군산오징어'], ['오징어짬뽕'], ['총알오징어'], ['대왕오징어'], ['오징어집']]]
-		acResource.caching(word, testResult[1])
-		assert.deepEqual(acResource.memo, {[word]: testResult[1]})
+		acResource.cacheACData(word, testResult[1])
+		assert.deepEqual(JSON.parse(localStorage.getItem('data'))[word].result, testResult[1])
 	})
 	it('"된장" 두번 캐싱', function() {
 		let word = '된장'
 		let word2 = '된장'
-		acResource.caching(word, [0, 0])
-		acResource.caching(word2, [0, 0])
+		acResource.cacheACData(word, [0, 0])
+		acResource.cacheACData(word2, [0, 0])
 
-		assert.deepEqual(acResource.memoLog, ['오징', '된장'])
+		assert.deepEqual(JSON.parse(localStorage.getItem('dataLog')), ['오징', '된장'])
 	})
 })
 
+describe('AutoCompleteResource.cacheRecentData', function(){
+	it('검색어 "오징어볶음" 캐싱', function(done) {
+		let word = '오징어볶음'
+		acResource.cacheRecentData(word)
+		assert.include(JSON.parse(localStorage.getItem('recentData')), word);
+		done();
+	})
+	it('검색어 "마른오징어" 캐싱', function(done) {
+		let word = '마른오징어'
+		acResource.cacheRecentData(word)
+		assert.include(JSON.parse(localStorage.getItem('recentData')), word);
+		done();
+	})
+})
+
+
 describe('searchField keydown', function(){
 	it('화살표 아래로', function() {
-		domContainer.autoCompleteList.innerHTML += "<li data-name='0'>0</li>"
+		domContainer.autoCompleteList.innerHTML = "<li data-name='0'>0</li>"
 		domContainer.autoCompleteList.innerHTML += "<li data-name='1'>1</li>"
 		domContainer.autoCompleteList.innerHTML += "<li data-name='2'>2</li>"
 
 		const evt = new Event('keydown');
 		evt.keyCode = 40;
 		domContainer.searchField.dispatchEvent(evt);
-		domContainer.searchField.dispatchEvent(evt);
 
-		assert.equal(domContainer.autoCompleteList.childNodes[1].className, "hover");
+		assert.equal(domContainer.autoCompleteList.childNodes[0].className, "hover");
 	})
 	it('화살표 위로', function() {
 		const evt = new Event('keydown');
@@ -76,7 +105,6 @@ describe('searchField input', function() {
 		domContainer.searchField.value = "오징";
 		domContainer.searchField.dispatchEvent(evt);
 
-		console.log(domContainer.autoCompleteList.childNodes);
 		assert.equal(domContainer.autoCompleteList.childNodes.length, 9);
 	})
 })
@@ -113,3 +141,48 @@ describe('searchButton click', function() {
 		assert.equal(domContainer.searchField.value, "");
 	})
 })
+
+describe('infiniteSliding button click', function () {
+    it('왼쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingLeftArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-left');
+        domContainer.slidingMenuList.classList.remove('slided-left');
+    });
+
+    it('오른쪽 슬라이딩', function () {
+        const evt = new MouseEvent("click");
+        domContainer.slidingRightArrow.dispatchEvent(evt);
+
+        assert.include(domContainer.slidingMenuList.className, 'slided-right');
+        domContainer.slidingMenuList.classList.remove('slided-right');
+    });
+
+    it('왼쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-left');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const last = slidingMenuList.lastElementChild;
+
+        const evt = new Event('transitionend');
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const first = slidingMenuList.firstElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-left');
+        assert.equal(first, last);
+    });
+
+    it('오른쪽 슬라이딩 끝났을 때 잘 바뀌었는지', function () {
+        domContainer.slidingMenuList.classList.add('slided-right');
+        const slidingMenuList = document.getElementsByClassName('sliding-menu-list')
+        const evt = new Event('transitionend');
+        const first = slidingMenuList.firstElementChild;
+
+        domContainer.slidingMenuList.dispatchEvent(evt);
+
+        const last = slidingMenuList.lastElementChild;
+        assert.notInclude(domContainer.slidingMenuList.className, 'slided-right');
+        assert.equal(first, last);
+    });
+})
+

@@ -170,7 +170,7 @@ a {
 }
 
 .auto-complete-window > ul > li > img {
-    content: url("./res/remove-button.png");
+    content: url("./res/remove.png");
     float: right;
     width: 15px;
     height: 15px;
@@ -205,8 +205,8 @@ a {
 }
 
 .side-dish {
-	height: 420px;
 	display: block;
+	text-align: center;
 }
 
 .side-dish-title > img {
@@ -220,27 +220,65 @@ a {
 	width: 980px;
 	margin: auto;
 	text-align: center;
-	margin: 50px 0;
+	margin-top: 60px;
+    margin-bottom: 10px;
 }
 
-.slider {
-	position: relative;
+.sliding-window {
+	overflow: hidden;
 	width: 100%;
 }
 
-.thumb-imgs {
+.sliding-menu-list {
 	display: flex;
+	position: relative;
+	left: -25%;
+	width: 150%;
+	transition: all 0s;
 }
 
-.thumb-imgs > li {
-	width: 215px;
-	height: 215px;
-	border-radius: 50%;
+.slided-left {
+	transform: translate(16.666%, 0px);
+	transition: transform 0.5s;
+}
+
+.slided-right {
+	transform: translate(-16.666%, 0px);
+	transition: transform 0.5s;
+}
+
+.sliding-menu-list > li {
 	overflow: hidden;
-	margin: auto;
+	margin: 0;
+	flex: 1;
+    padding: 10px;
 }
 
-.thumb-imgs > li > img {
-	width: 215px;
-	height: 215px;
+.sliding-menu-list > li > img {
+	width: 100%;
+	height: 100%;
+    border-radius: 50%;
+}
+
+.sliding-left-arrow {
+	position: relative;
+	left: -525px;
+	top: -161px;
+	z-index: 1;
+    width: 28px;
+    height: 52px;
+    border: none;
+    background-image: url(./res/arrow.png);
+}
+
+.sliding-right-arrow {
+	position: relative;
+	left: 525px;
+	top: -161px;
+	z-index: 1;
+    width: 28px;
+    height: 52px;
+    border: none;
+    background-image: url(./res/arrow.png);
+    background-position: right top;
 }

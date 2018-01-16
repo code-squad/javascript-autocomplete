@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Mocha Tests</title>
     <link rel="stylesheet" href="../mytest/node_modules/mocha/mocha.css">
     <link rel="stylesheet" type="text/css" href="../style.css">
-  </head>
-  <body>
+</head>
+<body>
     <div id="mocha"></div>
 
+    <!--appbar start-->
     <div class="app-bar">
         <div class="top-navigation">
             <div class="header-wrapper">
@@ -36,11 +37,7 @@
                 <button class="search-button"></button>
                 <div class="auto-complete-window">
                     <ul class="auto-complete-list"></ul>
-                    <ul class="recent-keyword-list">
-                        <li>1</li>
-                        <li>2</li>
-                        <li>3</li>
-                    </ul>
+                    <ul class="recent-keyword-list"></ul>
                 </div>
             </div>
             <div class="quick-link">
@@ -70,14 +67,18 @@
             <div class="side-dish-title">
                 <img src="https://cdn.bmf.kr/_data/files/category/category_17030000/d4b9fdb70ad303d186b8db2a82255402.png">
             </div>
-            <div class="slider">
-                <ul class="thumb-imgs">
-                    <li><img src="../res/dish1.jpeg"></li>
-                    <li><img src="../res/dish2.jpeg"></li>
-                    <li><img src="../res/dish3.jpeg"></li>
-                    <li><img src="../res/dish1.jpeg"></li>
+            <div class="sliding-window">
+                <ul class="sliding-menu-list">
+                    <li><img src="../res/dish1.jpg"></li>
+                    <li><img src="../res/dish2.jpg"></li>
+                    <li><img src="../res/dish3.jpg"></li>
+                    <li><img src="../res/dish4.jpg"></li>
+                    <li><img src="../res/dish5.jpg"></li>
+                    <li><img src="../res/dish6.jpg"></li>
                 </ul>
             </div>
+            <button class="sliding-left-arrow"></button>
+            <button class="sliding-right-arrow"></button>
         </div>
     </div>
 
@@ -86,7 +87,7 @@
     <script>mocha.setup('bdd')</script>
     <script src="./bundle.test.js"></script>
     <script>
-      mocha.run();
+        mocha.run();
     </script>
-  </body>
+</body>
 </html>
