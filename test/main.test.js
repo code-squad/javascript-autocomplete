@@ -1,4 +1,4 @@
-import {EventHandler, AutoComplete, Networking, Cache, Util} from '../src/script.js'
+import {EventHandler, AutoComplete, Networking, Cache, Util, MenuSlider} from '../src/script.js'
 
 const assert = chai.assert;
 
@@ -248,4 +248,33 @@ describe('auto', function(){
 		assert.notInclude(childList[4].className, "selected");
 		assert.include(childList[5].className, "selected");
 	});
+});
+
+describe('menu-slide', function(){
+	const menuSlider = new MenuSlider(Util.$('.menu_slider'),
+		Util.$('#left_arrow'),
+		Util.$('#right_arrow'),
+		980,
+		3,
+		0.5);
+
+	it('rightButton test', function(){
+		const beforePosition = menuSlider.menuSlider.style["transform"];
+		menuSlider.onRightButtonClick();
+		assert.notEqual(beforePosition, menuSlider.menuSlider.style["transform"])
+	});
+
+	it('leftButton test', function(){
+		const beforePosition = menuSlider.menuSlider.style["transform"];
+		menuSlider.onLeftButtonClick();
+		assert.notEqual(beforePosition, menuSlider.menuSlider.style["transform"])
+	});
+
+	it('transitionEnd test', function(){
+		menuSlider.position = 0;
+		const beforeSliderStyle = menuSlider.menuSlider.style["transform"];
+		menuSlider.onTransitionEnd();
+		assert.notEqual(menuSlider.menuSlider.style["transform"], beforeSliderStyle)
+	});
+
 });
